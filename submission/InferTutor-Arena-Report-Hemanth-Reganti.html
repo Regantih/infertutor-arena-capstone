@@ -200,7 +200,10 @@ hr { border:none; border-top:1px solid #ddd; margin:20px 0; }
 </li>
 <li><a href="#11-conclusion">11. Conclusion</a></li>
 <li><a href="#appendix-a-reproducibility">Appendix A — Reproducibility</a></li>
-<li><a href="#appendix-b-cost-compute-budget">Appendix B — Cost &amp; Compute Budget</a></li>
+<li><a href="#appendix-b-cost-compute-budget">Appendix B — Cost &amp; Compute Budget</a><ul>
+<li><a href="#b1-inside-the-rd-budget-what-9645-actually-bought">B.1 Inside the R&amp;D budget — what $96.45 actually bought</a></li>
+</ul>
+</li>
 </ul>
 </div>
 <div class="pagebreak"></div>
@@ -1028,4 +1031,52 @@ JSON: <code>mix-8r-460u_mixed_460u_1781404394.json</code>.</p>
 <p class="admonition-title">The headline efficiency number</p>
 <p>The <strong>official submitted run</strong> (<code>mix-4r</code>, the 4-GPU mixed app) cost <strong>$5.79</strong> and scored <strong>149,776,620</strong>. That is <strong>≈ 25.9 million score-points per dollar</strong> — and the score itself already divides by <code>total_GPU_count</code>, so the figure rewards doing more with fewer, cheaper GPUs. The expensive part of this project was the <em>search</em>; the winning configuration is cheap to run.</p>
 </div>
-<p><strong>Reading the budget.</strong> 82.6% of spend went to text-track R&amp;D — and that is exactly where the three levers (<code>--no-fast-boot</code> compiled CUDA graphs, the co-located load client, and the <code>max_num_batched_tokens</code> bump) were found. Each lever was isolated on the cheaper text workload before being carried into the mixed submission, so the two final mixed runs only had to <em>confirm</em> a known-good recipe rather than explore. In hindsight that is the right shape for an optimization budget: spend on discovery, not on re-running what you already understand.</p></body></html>
+<p><strong>Reading the budget.</strong> 82.6% of spend went to text-track R&amp;D — and that is exactly where the three levers (<code>--no-fast-boot</code> compiled CUDA graphs, the co-located load client, and the <code>max_num_batched_tokens</code> bump) were found. Each lever was isolated on the cheaper text workload before being carried into the mixed submission, so the two final mixed runs only had to <em>confirm</em> a known-good recipe rather than explore. In hindsight that is the right shape for an optimization budget: spend on discovery, not on re-running what you already understand.</p>
+<h3 id="b1-inside-the-rd-budget-what-9645-actually-bought">B.1 Inside the R&amp;D budget — what $96.45 actually bought</h3>
+<p>The 25 R&amp;D apps were not random spend; each one was a controlled sweep over a single knob, named after the variable it was probing. Grouping by the <em>primary knob under test</em> shows the money tracked the three levers almost evenly — discovery cost is dominated by the two latency levers (ITL + TTFT), with the rest spent locating the user knee and proving the result reproduces.</p>
+<table>
+<thead>
+<tr>
+<th>Sub-sweep (grouped by primary knob)</th>
+<th style="text-align: right;">Apps</th>
+<th style="text-align: right;">Spend</th>
+<th>What it bought</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Compiled CUDA-graph sweep</strong> (<code>compiled-*</code>)</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">$23.89</td>
+<td>The <strong>ITL lever</strong> — confirmed <code>--no-fast-boot</code> drops ITL 38.8 → 5.7 ms across 2r/4r/8r/10r and ramp lengths.</td>
+</tr>
+<tr>
+<td><strong>Prefill-admission / batch-token sweep</strong> (<code>r*-16k</code>, <code>prefill*</code>, <code>pc-16k</code>)</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">$30.41</td>
+<td>The <strong>TTFT lever</strong> — found <code>max_num_batched_tokens</code> 4096 → 16384 unblocks prefill admission; isolated prefix-cache's effect.</td>
+</tr>
+<tr>
+<td><strong>Replica &amp; user-scaling sweep</strong> (<code>sharded-*</code>, <code>seq64-*</code>, <code>zeropause-*</code>)</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">$28.72</td>
+<td>The <strong>GPU divisor + user knee</strong> — mapped throughput vs. replicas and the 300u/460u saturation points; sized load-client shards.</td>
+</tr>
+<tr>
+<td><strong>Baseline / reproducibility / H200 control</strong> (<code>baseline</code>, <code>repro-*</code>, <code>clean-*</code>, <code>h200-*</code>)</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">$13.43</td>
+<td>The <strong>controls</strong> — the 319K unoptimized baseline, two clean re-runs proving the numbers reproduce, and the H200-vs-H100 comparison.</td>
+</tr>
+<tr>
+<td><strong>R&amp;D total</strong></td>
+<td style="text-align: right;"><strong>25</strong></td>
+<td style="text-align: right;"><strong>$96.45</strong></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Why so many small re-runs</p>
+<p>Several apps differ only in <code>ramp</code> length or user count (<code>-ramp40</code>, <code>-ramp60</code>, <code>-600u</code>, <code>-400u</code>) — those are not waste, they are the <strong>knee-finding</strong> sweeps. You cannot claim "300 users on 4 GPUs with 0 errors" without running 250/300/400/460/500 and watching where the error cliff and TTFT spike actually appear (§5.5, §5.8). The cheapest run in the whole campaign, <code>compiled-2r-300u-ramp40</code> at $0.60, is what confirmed the compiled lever holds even on a 2-GPU box.</p>
+</div></body></html>

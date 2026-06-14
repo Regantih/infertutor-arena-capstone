@@ -695,3 +695,18 @@ The full campaign was **$116.79 across 32 Modal apps**. Two platform credits ($1
     The **official submitted run** (`mix-4r`, the 4-GPU mixed app) cost **$5.79** and scored **149,776,620**. That is **≈ 25.9 million score-points per dollar** — and the score itself already divides by `total_GPU_count`, so the figure rewards doing more with fewer, cheaper GPUs. The expensive part of this project was the *search*; the winning configuration is cheap to run.
 
 **Reading the budget.** 82.6% of spend went to text-track R&D — and that is exactly where the three levers (`--no-fast-boot` compiled CUDA graphs, the co-located load client, and the `max_num_batched_tokens` bump) were found. Each lever was isolated on the cheaper text workload before being carried into the mixed submission, so the two final mixed runs only had to *confirm* a known-good recipe rather than explore. In hindsight that is the right shape for an optimization budget: spend on discovery, not on re-running what you already understand.
+
+### B.1 Inside the R&D budget — what $96.45 actually bought
+
+The 25 R&D apps were not random spend; each one was a controlled sweep over a single knob, named after the variable it was probing. Grouping by the *primary knob under test* shows the money tracked the three levers almost evenly — discovery cost is dominated by the two latency levers (ITL + TTFT), with the rest spent locating the user knee and proving the result reproduces.
+
+| Sub-sweep (grouped by primary knob) | Apps | Spend | What it bought |
+|---|---:|---:|---|
+| **Compiled CUDA-graph sweep** (`compiled-*`) | 7 | $23.89 | The **ITL lever** — confirmed `--no-fast-boot` drops ITL 38.8 → 5.7 ms across 2r/4r/8r/10r and ramp lengths. |
+| **Prefill-admission / batch-token sweep** (`r*-16k`, `prefill*`, `pc-16k`) | 7 | $30.41 | The **TTFT lever** — found `max_num_batched_tokens` 4096 → 16384 unblocks prefill admission; isolated prefix-cache's effect. |
+| **Replica & user-scaling sweep** (`sharded-*`, `seq64-*`, `zeropause-*`) | 7 | $28.72 | The **GPU divisor + user knee** — mapped throughput vs. replicas and the 300u/460u saturation points; sized load-client shards. |
+| **Baseline / reproducibility / H200 control** (`baseline`, `repro-*`, `clean-*`, `h200-*`) | 4 | $13.43 | The **controls** — the 319K unoptimized baseline, two clean re-runs proving the numbers reproduce, and the H200-vs-H100 comparison. |
+| **R&D total** | **25** | **$96.45** | |
+
+!!! note "Why so many small re-runs"
+    Several apps differ only in `ramp` length or user count (`-ramp40`, `-ramp60`, `-600u`, `-400u`) — those are not waste, they are the **knee-finding** sweeps. You cannot claim "300 users on 4 GPUs with 0 errors" without running 250/300/400/460/500 and watching where the error cliff and TTFT spike actually appear (§5.5, §5.8). The cheapest run in the whole campaign, `compiled-2r-300u-ramp40` at $0.60, is what confirmed the compiled lever holds even on a 2-GPU box.
