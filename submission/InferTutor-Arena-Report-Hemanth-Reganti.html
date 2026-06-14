@@ -200,6 +200,7 @@ hr { border:none; border-top:1px solid #ddd; margin:20px 0; }
 </li>
 <li><a href="#11-conclusion">11. Conclusion</a></li>
 <li><a href="#appendix-a-reproducibility">Appendix A — Reproducibility</a></li>
+<li><a href="#appendix-b-cost-compute-budget">Appendix B — Cost &amp; Compute Budget</a></li>
 </ul>
 </div>
 <div class="pagebreak"></div>
@@ -969,4 +970,62 @@ JSON: <code>mix-8r-460u_mixed_460u_1781404394.json</code>.</p>
 <li><strong>Scorer:</strong> official <code>score_infertutor.py</code>, unmodified (omits <code>quality_pass_rate</code>; assumes 1.0).</li>
 <li><strong>Prompts:</strong> official <code>prompts.json</code>, unchanged; image = deterministic 256×192 PNG matching the harness.</li>
 <li><strong>Starter code</strong> verified byte-identical to the official <code>VizuaraAI/infertutor-arena-capstone</code> repo except the intended additions (<code>load_client_modal.py</code>, <code>probe_quality.py</code>, report, results).</li>
-</ul></body></html>
+</ul>
+<div class="pagebreak"></div>
+
+<h2 id="appendix-b-cost-compute-budget">Appendix B — Cost &amp; Compute Budget</h2>
+<p class="epigraph">“The cheapest, fastest, and most reliable components of a computer system are those that aren’t there.”<span class="cite">— Gordon Bell</span></p>
+
+<p>Every number below is a real Modal invoice line, not an estimate. The model and harness were built and debugged <strong>locally on a laptop at $0</strong> — no GPU was rented until the configuration was ready to benchmark. All spend is on-demand Modal GPU time, billed per second at <strong>H100 = $3.95/hr</strong> and <strong>H200 = $4.54/hr</strong>.</p>
+<p>The full campaign was <strong>$116.79 across 32 Modal apps</strong>. Two platform credits ($18 + $12 = $30) brought the <strong>net out-of-pocket to ≈ $86.79</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th style="text-align: right;">Apps</th>
+<th style="text-align: right;">Spend</th>
+<th style="text-align: right;">Share</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Submitted results</strong> (<code>mix-4r</code>, <code>mix-8r</code>)</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">$15.69</td>
+<td style="text-align: right;">13.4%</td>
+</tr>
+<tr>
+<td>Mixed-track ablations + baseline</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">$4.00</td>
+<td style="text-align: right;">3.4%</td>
+</tr>
+<tr>
+<td>Text-track R&amp;D — lever discovery (incl. H200)</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">$96.45</td>
+<td style="text-align: right;">82.6%</td>
+</tr>
+<tr>
+<td>Quality probe (compiled vs. eager)</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">$0.65</td>
+<td style="text-align: right;">0.6%</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td style="text-align: right;"><strong>32</strong></td>
+<td style="text-align: right;"><strong>$116.79</strong></td>
+<td style="text-align: right;"><strong>100%</strong></td>
+</tr>
+</tbody>
+</table>
+<div class="figure">
+<p><img alt="Cost breakdown — top 12 Modal apps by spend" src="figures/cost_breakdown.png" /></p>
+<p><em>Figure 8 — Where the $116.79 went: the 12 most expensive of 32 Modal apps. Green = the two submitted mixed-track runs; steel = text-track R&amp;D, where the three winning levers were actually discovered; amber = the H200 comparison. The bulk of spend bought </em><em>knowledge</em><em> (which knobs move the score), not the final two runs.</em></p>
+</div>
+<div class="admonition finding">
+<p class="admonition-title">The headline efficiency number</p>
+<p>The <strong>official submitted run</strong> (<code>mix-4r</code>, the 4-GPU mixed app) cost <strong>$5.79</strong> and scored <strong>149,776,620</strong>. That is <strong>≈ 25.9 million score-points per dollar</strong> — and the score itself already divides by <code>total_GPU_count</code>, so the figure rewards doing more with fewer, cheaper GPUs. The expensive part of this project was the <em>search</em>; the winning configuration is cheap to run.</p>
+</div>
+<p><strong>Reading the budget.</strong> 82.6% of spend went to text-track R&amp;D — and that is exactly where the three levers (<code>--no-fast-boot</code> compiled CUDA graphs, the co-located load client, and the <code>max_num_batched_tokens</code> bump) were found. Each lever was isolated on the cheaper text workload before being carried into the mixed submission, so the two final mixed runs only had to <em>confirm</em> a known-good recipe rather than explore. In hindsight that is the right shape for an optimization budget: spend on discovery, not on re-running what you already understand.</p></body></html>

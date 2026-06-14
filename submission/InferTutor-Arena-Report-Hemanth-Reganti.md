@@ -664,3 +664,34 @@ The optimized, in-budget pipeline is **~469×** the unoptimized 1-GPU baseline a
 - **Scorer:** official `score_infertutor.py`, unmodified (omits `quality_pass_rate`; assumes 1.0).
 - **Prompts:** official `prompts.json`, unchanged; image = deterministic 256×192 PNG matching the harness.
 - **Starter code** verified byte-identical to the official `VizuaraAI/infertutor-arena-capstone` repo except the intended additions (`load_client_modal.py`, `probe_quality.py`, report, results).
+
+<div class="pagebreak"></div>
+
+## Appendix B — Cost & Compute Budget
+
+<p class="epigraph">“The cheapest, fastest, and most reliable components of a computer system are those that aren’t there.”<span class="cite">— Gordon Bell</span></p>
+
+Every number below is a real Modal invoice line, not an estimate. The model and harness were built and debugged **locally on a laptop at $0** — no GPU was rented until the configuration was ready to benchmark. All spend is on-demand Modal GPU time, billed per second at **H100 = $3.95/hr** and **H200 = $4.54/hr**.
+
+The full campaign was **$116.79 across 32 Modal apps**. Two platform credits ($18 + $12 = $30) brought the **net out-of-pocket to ≈ $86.79**.
+
+| Category | Apps | Spend | Share |
+|---|---:|---:|---:|
+| **Submitted results** (`mix-4r`, `mix-8r`) | 2 | $15.69 | 13.4% |
+| Mixed-track ablations + baseline | 3 | $4.00 | 3.4% |
+| Text-track R&D — lever discovery (incl. H200) | 25 | $96.45 | 82.6% |
+| Quality probe (compiled vs. eager) | 2 | $0.65 | 0.6% |
+| **Total** | **32** | **$116.79** | **100%** |
+
+<div class="figure" markdown="1">
+
+![Cost breakdown — top 12 Modal apps by spend](figures/cost_breakdown.png)
+
+*Figure 8 — Where the $116.79 went: the 12 most expensive of 32 Modal apps. Green = the two submitted mixed-track runs; steel = text-track R&D, where the three winning levers were actually discovered; amber = the H200 comparison. The bulk of spend bought **knowledge** (which knobs move the score), not the final two runs.*
+
+</div>
+
+!!! finding "The headline efficiency number"
+    The **official submitted run** (`mix-4r`, the 4-GPU mixed app) cost **$5.79** and scored **149,776,620**. That is **≈ 25.9 million score-points per dollar** — and the score itself already divides by `total_GPU_count`, so the figure rewards doing more with fewer, cheaper GPUs. The expensive part of this project was the *search*; the winning configuration is cheap to run.
+
+**Reading the budget.** 82.6% of spend went to text-track R&D — and that is exactly where the three levers (`--no-fast-boot` compiled CUDA graphs, the co-located load client, and the `max_num_batched_tokens` bump) were found. Each lever was isolated on the cheaper text workload before being carried into the mixed submission, so the two final mixed runs only had to *confirm* a known-good recipe rather than explore. In hindsight that is the right shape for an optimization budget: spend on discovery, not on re-running what you already understand.
