@@ -1,0 +1,28 @@
+{
+  "config": {
+    "label": "mix-4r-300u",
+    "model": "Qwen/Qwen3-VL-4B-Instruct",
+    "mode": "mixed",
+    "users": 300,
+    "shards": 16,
+    "duration": 150,
+    "ramp_up": 75,
+    "max_tokens": 96,
+    "total_gpus": 4
+  },
+  "results": {
+    "total_requests": 18905,
+    "total_errors": 0,
+    "error_rate": 0.0,
+    "total_stream_chunks": 1749319,
+    "ttft_p50_ms": 667.6908100000105,
+    "ttft_p95_ms": 1028.8761080000058,
+    "ttft_p99_ms": 1259.8937980000073,
+    "itl_p50_ms": 4.846766126315802,
+    "itl_p95_ms": 5.669269970588096,
+    "latency_p50_ms": 1108.2463809999865,
+    "latency_p95_ms": 1518.2016360000007,
+    "aggregate_stream_chunks_per_s": 11648.579896298319,
+    "requests_per_s": 125.886932537473
+  }
+}

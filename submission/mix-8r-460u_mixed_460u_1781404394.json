@@ -1,0 +1,28 @@
+{
+  "config": {
+    "label": "mix-8r-460u",
+    "model": "Qwen/Qwen3-VL-4B-Instruct",
+    "mode": "mixed",
+    "users": 460,
+    "shards": 20,
+    "duration": 150,
+    "ramp_up": 90,
+    "max_tokens": 96,
+    "total_gpus": 8
+  },
+  "results": {
+    "total_requests": 28425,
+    "total_errors": 131,
+    "error_rate": 0.004608619173262973,
+    "total_stream_chunks": 2616810,
+    "ttft_p50_ms": 456.65665699999636,
+    "ttft_p95_ms": 803.4711150000078,
+    "ttft_p99_ms": 4729.217763000008,
+    "itl_p50_ms": 4.906192252631651,
+    "itl_p95_ms": 6.561121852631627,
+    "latency_p50_ms": 907.5606499999935,
+    "latency_p95_ms": 1311.8013810000093,
+    "aggregate_stream_chunks_per_s": 17424.84069892922,
+    "requests_per_s": 189.2766753669785
+  }
+}
