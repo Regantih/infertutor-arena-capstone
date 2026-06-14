@@ -1,0 +1,173 @@
+{
+  "label": "compiled-mixed",
+  "url": "https://regantih--infertutor-q-compiled-serve.modal.run",
+  "model": "Qwen/Qwen3-VL-4B-Instruct",
+  "cases": [
+    {
+      "i": 1,
+      "category": "image",
+      "prompt": "Look at this simplified serving diagram. What bottleneck would you investigate first for high TTFT?",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 2255.5,
+      "answer": "**Tokenization bottleneck.**\n\nIn vLLM, TTFT (Token Throughput First Time) is dominated by the **tokenization step** \u2014 converting input text into token IDs \u2014 especially when using a large vocabulary or complex tokenizers. This step is often the slowest in the pipeline, especially if:\n\n- Tokenizer is not optimized (e.g., using `transformers` with slow tokenization).\n- Input text is long or has many special tokens.\n- GPU memory pressure forces tokenization to happen on CPU or in a slow buffer.\n\n**Action:** Profile tokenization latency using `vLLM`\u2019s `--profile` flag or `torch.cuda.synchronize()` + timing. Optimize tokenizer (e.g., switch to `transformers` with `use_fast=True`, or use `tokenizers` with `fast` mode).",
+      "usage": {
+        "prompt_tokens": 120,
+        "total_tokens": 292,
+        "completion_tokens": 172,
+        "prompt_tokens_details": null
+      },
+      "flags": []
+    },
+    {
+      "i": 2,
+      "category": "image",
+      "prompt": "This image is a toy workload diagram. Explain whether this looks prefill-heavy or decode-heavy and why.",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 538.8,
+      "answer": "Decode-heavy.\n\nReason: The diagram shows a single, long sequence of tokens being generated (one continuous row of blocks), with no visible prefill phase (which would show multiple distinct input tokens being fed in before generation starts). The uniform, horizontal progression implies a single decoding step per token, typical of decode-heavy workloads like chat completions.",
+      "usage": {
+        "prompt_tokens": 123,
+        "total_tokens": 193,
+        "completion_tokens": 70,
+        "prompt_tokens_details": null
+      },
+      "flags": []
+    },
+    {
+      "i": 3,
+      "category": "image",
+      "prompt": "A student uploaded this dashboard sketch during a load test. Suggest two vLLM knobs to try next.",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 501.8,
+      "answer": "1. **`max_model_len`** \u2014 Adjust to match your actual input/output length to avoid padding overhead and reduce memory pressure.\n2. **`tensor_parallel_size`** \u2014 Increase if you have multiple GPUs and want to distribute model weight load; decrease if you\u2019re hitting memory limits or have only one GPU.",
+      "usage": {
+        "prompt_tokens": 124,
+        "total_tokens": 189,
+        "completion_tokens": 65,
+        "prompt_tokens_details": null
+      },
+      "flags": []
+    },
+    {
+      "i": 4,
+      "category": "image",
+      "prompt": "Inspect this simple architecture sketch and explain whether replicas or tensor parallelism would be the first scaling move.",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 655.2,
+      "answer": "Replicas.\n\nThe sketch shows a single, monolithic model with no visible tensor splits (e.g., no \u201csplit\u201d or \u201cparallel\u201d indicators across dimensions). Since there\u2019s no indication of internal tensor parallelism (e.g., attention heads or layers split across GPUs), scaling via replicas (model copies) is the first logical step \u2014 it\u2019s simpler, requires no architectural change, and scales linearly with compute resources. Tensor parallelism would be next, once replicas are stable and performance is measured.",
+      "usage": {
+        "prompt_tokens": 122,
+        "total_tokens": 224,
+        "completion_tokens": 102,
+        "prompt_tokens_details": null
+      },
+      "flags": []
+    },
+    {
+      "i": 5,
+      "category": "long",
+      "prompt": "Course context: KV cache, GQA, MQA, MLA, FlashAttention, PagedAttention, chunked prefill, continuous batching, quantization, speculative decoding, tensor parallelism, replicas, GPU memory bandwidth. Course context repeated for a long prompt. Course context: KV cache, GQA, MQA, MLA, FlashAttention, PagedAttention, chunked prefill, continuous batching, quantization, speculative decoding, tensor parallelism, replicas, GPU memory bandwidth. Now design a debugging playbook for a team whose p95 ITL degraded after they increased max_num_batched_tokens.",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 1395.3,
+      "answer": "**Debugging Playbook: P95 ITL Degraded After \u2191 max_num_batched_tokens**\n\n---\n\n### \ud83c\udfaf **Goal**: Restore P95 ITL (Inference Throughput Latency) by diagnosing & fixing bottlenecks introduced by increased `max_num_batched_tokens`.\n\n---\n\n## \ud83d\udd0d Step 1: Confirm the Root Cause\n\n**Check:**\n- Is `max_num_batched_tokens` the *only* change? \u2192 If not, isolate variable.\n- Did you increase `max_num_batched_tokens` *after* tuning other parameters? \u2192 Check for interaction with `max_model_len`, `max_num_seqs`, or `max_num_batched_tokens_per_replica`.\n\n**Verify:**\n```python\n# vLLM config snippet\nmodel_config = {\n    \"max_num_batched_tokens\": 128,  # \u2190 Increased from 64\n    \"max_model_len\": 4096,\n    \"max_num_seqs\": 8,\n    \"tensor_parallel_size\": 1,\n}\n```\n\n---\n\n## \ud83e\udde0 Step 2: Analyze Memory & Bandwidth Bottlenecks\n\n### \u2705 Check GPU Memory Usage\n```bash\nnvidia-smi --query-gpu",
+      "usage": {
+        "prompt_tokens": 174,
+        "total_tokens": 430,
+        "completion_tokens": 256,
+        "prompt_tokens_details": null
+      },
+      "flags": []
+    },
+    {
+      "i": 6,
+      "category": "long",
+      "prompt": "You are reviewing an inference launch plan. The team wants to serve a multimodal tutor with shared system prompts, short questions, occasional long debugging traces, and small uploaded diagrams. Explain how you would choose max_model_len, max_num_seqs, max_num_batched_tokens, prefix caching, chunked prefill, and replicas. Give the answer as a prioritized checklist.",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 1380.5,
+      "answer": "**Prioritized Checklist for Multimodal Tutor Inference (vLLM)**\n\n1. **max_model_len**  \n   \u2192 Set to **model\u2019s max context length** (e.g., 4096 or 8192) \u2014 *must accommodate long debugging traces + diagrams*.  \n   \u2192 *If diagrams are tokenized as image tokens, add padding for visual tokens (e.g., 100\u2013500 tokens).*\n\n2. **max_num_seqs**  \n   \u2192 Set to **1\u20132** (for shared system prompts + short Qs) \u2014 *avoid overcommitting seqs; prioritize throughput over concurrency*.  \n   \u2192 *If debugging traces are frequent, consider dynamic seq limits per request.*\n\n3. **max_num_batched_tokens**  \n   \u2192 Set to **model\u2019s max batch size** (e.g., 128\u2013256 tokens) \u2014 *for efficient token-level batching*.  \n   \u2192 *Adjust if long traces cause token overflow; use chunked prefill to avoid blocking.*\n\n4. **prefix caching**  \n   \u2192 **Enable** \u2014 *shared system prompts are static; cache prefix to avoid re-prefill*.  \n   \u2192 *Cache only if prompt is identical",
+      "usage": {
+        "prompt_tokens": 126,
+        "total_tokens": 382,
+        "completion_tokens": 256,
+        "prompt_tokens_details": null
+      },
+      "flags": []
+    },
+    {
+      "i": 7,
+      "category": "text",
+      "prompt": "A student sees TTFT p95 jump from 700 ms to 4 s when traffic rises from 50 to 200 users. Diagnose likely causes and the first two experiments.",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 1522.3,
+      "answer": "**Diagnosis:**\nTTFT p95 spikes from 700ms \u2192 4s with traffic from 50\u2192200 users indicates **scheduling or tokenization bottleneck**, likely due to:\n- **Tokenization overhead** (e.g., slow tokenizer or batched tokenization)\n- **GPU memory pressure** (e.g., OOM or pinned memory thrashing)\n- **Scheduler starvation** (e.g., greedy scheduling with low batch size)\n- **Inefficient KV cache management** (e.g., cache growth too fast)\n\n---\n\n**First Experiment:**\n\u2705 **Reduce batch size to 1** \u2192 measure TTFT p95.  \n\u2192 If TTFT drops \u2192 **batching is the culprit** (e.g., scheduler or memory contention).  \n\u2192 If TTFT stays high \u2192 proceed to next.\n\n---\n\n**Second Experiment:**\n\u2705 **Enable `--max-model-len` = 1024** (or reduce if model is longer) \u2192 measure TTFT p95.  \n\u2192 If TTFT drops \u2192 **KV cache growth or tokenization is bottleneck**.  \n\u2192 If TTFT stays high \u2192 proceed to memory profiling or scheduler tuning.\n\n---\n\n**Next Steps (if needed):**\n- Check `",
+      "usage": {
+        "prompt_tokens": 96,
+        "total_tokens": 352,
+        "completion_tokens": 256,
+        "prompt_tokens_details": null
+      },
+      "flags": []
+    },
+    {
+      "i": 8,
+      "category": "text",
+      "prompt": "Explain why decode is often memory-bandwidth bound while prefill is more compute-bound. Mention KV cache behavior.",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 1389.2,
+      "answer": "**Decode is memory-bandwidth bound** because:\n\n- **KV cache grows linearly** with output length \u2192 memory footprint scales with `n_tokens` (e.g., 1000 tokens \u2192 1000\u00d7d_model floats).\n- **Each decode step reads/writes KV cache** (e.g., `cache.add_token(...)`), requiring **high-bandwidth memory access** to fetch/update context.\n- **Attention computation** (e.g., `QK^T` for self-attention) **reads KV cache** \u2192 bandwidth dominates over compute for large models.\n- **KV cache is sparse** (only `K`, `V` stored, not `Q`) \u2192 **high memory access density** \u2192 memory bandwidth bottleneck.\n\n**Prefill is compute-bound** because:\n\n- **KV cache is built from scratch** \u2192 no repeated reads/writes \u2192 **memory access is sparse**.\n- **Prefill computes full attention** for all tokens \u2192 **compute-heavy** (e.g., `QK^T` for `n_tokens \u00d7 d_model`).\n- **No cache reuse** \u2192 memory bandwidth is **not the limiting factor** \u2192 compute dominates.\n- **Prefill is typically faster** (e.g., 100",
+      "usage": {
+        "prompt_tokens": 75,
+        "total_tokens": 331,
+        "completion_tokens": 256,
+        "prompt_tokens_details": null
+      },
+      "flags": []
+    },
+    {
+      "i": 9,
+      "category": "text",
+      "prompt": "Given a 4 GPU budget for a 4B tutor model, when would replicas beat tensor parallelism?",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 1362.4,
+      "answer": "Replicas beat tensor parallelism for 4B models on 4 GPUs when:\n\n- **Model size is small enough** that tensor parallelism overhead (e.g., inter-GPU communication, sharding metadata) outweighs the benefit of parallelism.\n- **You need high throughput or low latency** for inference, and tensor parallelism introduces bottlenecks (e.g., all-reduce, gradient sync).\n- **You\u2019re using a model with low tensor parallelism efficiency** (e.g., non-standard layers, sparse attention, or models not optimized for TP).\n- **You\u2019re running inference, not training** \u2014 TP is less effective for inference due to communication overhead.\n- **You\u2019re using vLLM with `tensor_parallel_size=1`** \u2014 replicas are faster for small models on few GPUs.\n\n**Practical rule of thumb**:  \nFor 4B models on 4 GPUs, **replicas (1 model per GPU)** are faster than tensor parallelism (e.g., `tensor_parallel_size=4`) when:\n\n- Model has < 100M parameters (e.g., 4B is borderline \u2014 TP may not help).\n- You\u2019re using vLLM with `tensor_parallel_size=1` (default for inference).\n",
+      "usage": {
+        "prompt_tokens": 74,
+        "total_tokens": 330,
+        "completion_tokens": 256,
+        "prompt_tokens_details": null
+      },
+      "flags": []
+    },
+    {
+      "i": 10,
+      "category": "text",
+      "prompt": "What should a team tune first: max_num_seqs, max_num_batched_tokens, or max_model_len? Give a practical order.",
+      "ok": true,
+      "status": 200,
+      "latency_ms": 1359.2,
+      "answer": "**Practical tuning order:**\n\n1. **max_model_len** \u2014 *First*  \n   \u2192 Must match your model\u2019s actual max sequence length (e.g., 4096, 8192).  \n   \u2192 If too short, you lose capacity; too long, you hit hardware limits or OOM.  \n   \u2192 *Critical for correctness and safety.*\n\n2. **max_num_seqs** \u2014 *Second*  \n   \u2192 Controls concurrency per GPU.  \n   \u2192 Tune after max_model_len to avoid overloading GPU with too many sequences.  \n   \u2192 Use `max_num_seqs = min(available_gpu_memory / seq_len_per_token, max_possible)`.\n\n3. **max_num_batched_tokens** \u2014 *Third*  \n   \u2192 Controls batch size for token-level parallelism.  \n   \u2192 Tune *after* max_num_seqs to avoid batching too many tokens that can\u2019t fit in memory.  \n   \u2192 Often set to `max_num_seqs * avg_seq_len` or tuned via profiling.\n\n> \u2705 **Why this order?**  \n> - Start with model constraints (max_model_len).  \n> - Then concurrency (max_num_seqs) to avoid GPU overload.  \n> - Finally, batching (max_num_batched_tokens)",
+      "usage": {
+        "prompt_tokens": 79,
+        "total_tokens": 335,
+        "completion_tokens": 256,
+        "prompt_tokens_details": null
+      },
+      "flags": []
+    }
+  ],
+  "summary": {
+    "total_cases": 10,
+    "flagged_cases": 0,
+    "image_cases": 4,
+    "image_flagged": 0
+  }
+}

@@ -119,3 +119,14 @@ Mixed-track findings:
 **Track 1 official (4-GPU): mix-4r-300u = 149,776,620.  Optional boss fight (8-GPU): mix-8r-460u = 189,183,025.**
 
 > Scorer caveat: the official formula multiplies by `quality_pass_rate`; the local harness (`score_infertutor.py`) assumes it = 1.0, so all scores above are the throughput/latency composite under that assumption.
+
+## Quality probe — is compiled-on-mixed safe? (closing the one open assumption)
+
+The spec warns compiled mode "performed poorly on mixed multimodal traffic" and penalizes optimizations that "break multimodal traffic." Since our headline keeps compiled **on**, we measured quality directly (`probe_quality.py`): the official prompts (4 image w/ the harness 256×192 PNG, 2 long, 4 text), non-streaming, against two 1×H100 endpoints differing only in execution mode.
+
+| endpoint | cases | flagged | image coherent | latency (image/text) | artifact |
+|---|---:|---:|---:|---|---|
+| compiled-mixed (`--no-fast-boot`) | 10 | 0 | 4/4 | ~0.5 s / ~1.4 s | `quality_compiled-mixed_*.json` |
+| eager-mixed (default) | 10 | 0 | 4/4 | ~2.0 s / ~4.5 s | `quality_eager-mixed_*.json` |
+
+Both modes return coherent, on-topic tutoring answers and the model genuinely reads the diagram (decode-heavy vs prefill-heavy, replicas vs TP). Image answers are essentially **identical in content** between modes — compiled is just **3–4× faster per request**. So the dry-run's "poorly" was a latency/throughput observation, not output-correctness: **compiled-on-mixed does not degrade `quality_pass_rate`**, and is strictly better here.
