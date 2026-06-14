@@ -45,6 +45,22 @@
 
 <div class="pagebreak"></div>
 
+## At a Glance — How the System Was Optimized
+
+<div class="infographic">
+<div class="ig-head"><div class="ig-title">How InferTutor Arena Was Optimized</div><div class="ig-sub">Five ideas that turn a 0.3M baseline into a 150M in-budget production system — measured, not assumed</div></div>
+<div class="ig-grid">
+<div class="ig-card blue"><div class="ig-num">1</div><div class="ig-ct">The Core Idea</div><ul><li>Every answer has two phases: <b>prefill</b> (read the whole prompt, make the first token) and <b>decode</b> (stream the rest, one token at a time).</li><li>Prefill is <b>compute-bound</b> &rarr; it sets <b>TTFT</b>. Decode is <b>memory-bound</b> &rarr; it sets <b>ITL</b>.</li><li>The score divides by both, so each phase needs its <b>own</b> knob — fixing one does not fix the other.</li></ul></div>
+<div class="ig-card green"><div class="ig-num">2</div><div class="ig-ct">What Changes — the three levers</div><ul><li><b>Compiled CUDA graphs:</b> ITL 38.8 &rarr; 5.7 ms (removes per-step kernel-launch overhead).</li><li><b>Co-located load client:</b> TTFT ~3 s &rarr; ~1 s (kills home-uplink bufferbloat — measure the server, not the laptop).</li><li><b>max_batch_tokens 4096 &rarr; 16384:</b> unblocks prefill admission so decode never starves.</li></ul></div>
+<div class="ig-card amber span2"><div class="ig-num">3</div><div class="ig-ct">The Core Tradeoff</div><ul><li><b>More users &harr; higher TTFT.</b> Throughput rises with load until the prefill queue saturates — the knee is <b>300 users on 4 GPUs</b> (0 errors).</li><li><b>More GPUs &harr; a bigger divisor.</b> The score divides by GPU count, so 8 GPUs must beat 4 by &gt;2× — but real scaling is only ~1.5×.</li><li><b>Errors are a cliff, not a slope.</b> Past ~1% error the (1−err) factor and the TTFT spike collapse the score (460u = 189M, 500u = 150M).</li></ul></div>
+<div class="ig-card purple"><div class="ig-num">4</div><div class="ig-ct">What You See in the Results</div><ul><li><b>Official (4×H100, 300u):</b> TTFT 1029 ms · ITL 5.7 ms · 11,649 c/s · 0 err &rarr; <b>149,776,620</b>.</li><li><b>Boss fight (8×H100, 460u):</b> 17,425 c/s &rarr; <b>189,183,025</b> — only while errors stay ~0.5%.</li><li><b>~469×</b> the unoptimized 1-GPU baseline; ~54× the spec's mixed reference.</li></ul></div>
+<div class="ig-card teal"><div class="ig-num">5</div><div class="ig-ct">The Principle</div><ul><li>Intuition is unreliable — validate <b>every</b> knob against the full scoring function.</li><li>Prefix caching "should" have helped and hurt 4×; compiled mode was "warned against" and was the biggest win.</li><li>The point is not to flip flags — it is to make the <b>bottleneck</b> visible, then move it.</li></ul></div>
+</div>
+<div class="ig-foot">Don't tune blind: measure against the score &rarr; find the binding bottleneck &rarr; move it &rarr; re-measure &rarr; repeat.</div>
+</div>
+
+<div class="pagebreak"></div>
+
 ## 1. Introduction
 
 <p class="epigraph">“The more you buy, the more you save.”<span class="cite">— Jensen Huang, NVIDIA CEO</span></p>

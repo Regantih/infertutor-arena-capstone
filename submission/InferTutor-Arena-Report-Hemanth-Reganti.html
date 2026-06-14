@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>InferTutor Arena Capstone — Hemanth Reganti</title><style>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>InferTutor Arena Capstone - Hemanth Reganti</title><style>
 @page { size: A4; margin: 20mm 18mm; }
 * { box-sizing: border-box; }
 html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -38,6 +38,29 @@ p { margin:8px 0; } strong { color:#111; } a { color:#1a4f8b; text-decoration:no
   max-width:84%; font-family:"Georgia","Cambria",serif; line-height:1.45; page-break-after:avoid; }
 .epigraph .cite { display:block; font-style:normal; font-size:8.6pt; color:#8a8a82;
   font-family:"Helvetica Neue",Arial,sans-serif; letter-spacing:.5px; margin-top:3px; }
+.infographic { page-break-inside:avoid; margin:8px 0 6px; }
+.ig-head { text-align:center; margin-bottom:14px; }
+.ig-title { font-family:"Helvetica Neue",Arial,sans-serif; font-size:18pt; font-weight:800; color:#0e1a2b; }
+.ig-sub { font-family:"Helvetica Neue",Arial,sans-serif; font-size:9.8pt; color:#666; margin-top:4px; }
+.ig-grid { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+.ig-card { border:1px solid #e2e2da; border-radius:8px; background:#fcfcfa; padding:11px 14px 8px;
+  position:relative; box-shadow:0 1px 2px rgba(0,0,0,.04); text-align:left; page-break-inside:avoid; }
+.ig-card.span2 { grid-column:1 / -1; }
+.ig-num { width:23px; height:23px; border-radius:50%; color:#fff; font-family:"Helvetica Neue",Arial,sans-serif;
+  font-weight:800; font-size:11pt; display:flex; align-items:center; justify-content:center;
+  position:absolute; top:11px; left:13px; }
+.ig-ct { font-family:"Helvetica Neue",Arial,sans-serif; font-weight:700; font-size:11.5pt; color:#1a1a1a;
+  margin:2px 0 6px 31px; }
+.ig-card ul { margin:2px 0; padding-left:17px; font-size:9.5pt; line-height:1.4;
+  font-family:"Helvetica Neue",Arial,sans-serif; color:#333; text-align:left; }
+.ig-card li { margin:3px 0; } .ig-card b { color:#111; }
+.ig-card.blue { border-top:3px solid #2f5ca6; } .ig-card.blue .ig-num { background:#2f5ca6; }
+.ig-card.green { border-top:3px solid #2e7d4f; } .ig-card.green .ig-num { background:#2e7d4f; }
+.ig-card.amber { border-top:3px solid #d49a2a; } .ig-card.amber .ig-num { background:#d49a2a; }
+.ig-card.purple { border-top:3px solid #6a4fa6; } .ig-card.purple .ig-num { background:#6a4fa6; }
+.ig-card.teal { border-top:3px solid #1f8a8a; } .ig-card.teal .ig-num { background:#1f8a8a; }
+.ig-foot { margin-top:12px; text-align:center; font-family:"Helvetica Neue",Arial,sans-serif;
+  font-size:9.5pt; color:#234; background:#f4f7fc; border:1px solid #dfe7f3; border-radius:6px; padding:8px 12px; }
 .toc { background:#fafaf8; border:1px solid #e2e2dc; border-radius:4px; padding:10px 22px; font-size:10.8pt; }
 .toc ul { list-style:none; padding-left:16px; margin:4px 0; } .toc > ul { padding-left:0; }
 .toc li { margin:2px 0; text-align:left; } .toc a { color:#222; }
@@ -115,6 +138,7 @@ hr { border:none; border-top:1px solid #ddd; margin:20px 0; }
 <ul>
 <li><a href="#production-multimodal-llm-serving-on-modal-with-vllm">Production Multimodal LLM Serving on Modal with vLLM</a></li>
 <li><a href="#contents">Contents</a></li>
+<li><a href="#at-a-glance-how-the-system-was-optimized">At a Glance — How the System Was Optimized</a></li>
 <li><a href="#1-introduction">1. Introduction</a><ul>
 <li><a href="#11-project-overview">1.1 Project overview</a></li>
 <li><a href="#12-the-product-story">1.2 The product story</a></li>
@@ -178,6 +202,21 @@ hr { border:none; border-top:1px solid #ddd; margin:20px 0; }
 <li><a href="#appendix-a-reproducibility">Appendix A — Reproducibility</a></li>
 </ul>
 </div>
+<div class="pagebreak"></div>
+
+<h2 id="at-a-glance-how-the-system-was-optimized">At a Glance — How the System Was Optimized</h2>
+<div class="infographic">
+<div class="ig-head"><div class="ig-title">How InferTutor Arena Was Optimized</div><div class="ig-sub">Five ideas that turn a 0.3M baseline into a 150M in-budget production system — measured, not assumed</div></div>
+<div class="ig-grid">
+<div class="ig-card blue"><div class="ig-num">1</div><div class="ig-ct">The Core Idea</div><ul><li>Every answer has two phases: <b>prefill</b> (read the whole prompt, make the first token) and <b>decode</b> (stream the rest, one token at a time).</li><li>Prefill is <b>compute-bound</b> &rarr; it sets <b>TTFT</b>. Decode is <b>memory-bound</b> &rarr; it sets <b>ITL</b>.</li><li>The score divides by both, so each phase needs its <b>own</b> knob — fixing one does not fix the other.</li></ul></div>
+<div class="ig-card green"><div class="ig-num">2</div><div class="ig-ct">What Changes — the three levers</div><ul><li><b>Compiled CUDA graphs:</b> ITL 38.8 &rarr; 5.7 ms (removes per-step kernel-launch overhead).</li><li><b>Co-located load client:</b> TTFT ~3 s &rarr; ~1 s (kills home-uplink bufferbloat — measure the server, not the laptop).</li><li><b>max_batch_tokens 4096 &rarr; 16384:</b> unblocks prefill admission so decode never starves.</li></ul></div>
+<div class="ig-card amber span2"><div class="ig-num">3</div><div class="ig-ct">The Core Tradeoff</div><ul><li><b>More users &harr; higher TTFT.</b> Throughput rises with load until the prefill queue saturates — the knee is <b>300 users on 4 GPUs</b> (0 errors).</li><li><b>More GPUs &harr; a bigger divisor.</b> The score divides by GPU count, so 8 GPUs must beat 4 by &gt;2× — but real scaling is only ~1.5×.</li><li><b>Errors are a cliff, not a slope.</b> Past ~1% error the (1−err) factor and the TTFT spike collapse the score (460u = 189M, 500u = 150M).</li></ul></div>
+<div class="ig-card purple"><div class="ig-num">4</div><div class="ig-ct">What You See in the Results</div><ul><li><b>Official (4×H100, 300u):</b> TTFT 1029 ms · ITL 5.7 ms · 11,649 c/s · 0 err &rarr; <b>149,776,620</b>.</li><li><b>Boss fight (8×H100, 460u):</b> 17,425 c/s &rarr; <b>189,183,025</b> — only while errors stay ~0.5%.</li><li><b>~469×</b> the unoptimized 1-GPU baseline; ~54× the spec's mixed reference.</li></ul></div>
+<div class="ig-card teal"><div class="ig-num">5</div><div class="ig-ct">The Principle</div><ul><li>Intuition is unreliable — validate <b>every</b> knob against the full scoring function.</li><li>Prefix caching "should" have helped and hurt 4×; compiled mode was "warned against" and was the biggest win.</li><li>The point is not to flip flags — it is to make the <b>bottleneck</b> visible, then move it.</li></ul></div>
+</div>
+<div class="ig-foot">Don't tune blind: measure against the score &rarr; find the binding bottleneck &rarr; move it &rarr; re-measure &rarr; repeat.</div>
+</div>
+
 <div class="pagebreak"></div>
 
 <h2 id="1-introduction">1. Introduction</h2>
