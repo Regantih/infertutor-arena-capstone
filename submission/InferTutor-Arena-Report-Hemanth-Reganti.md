@@ -698,14 +698,14 @@ The full campaign was **$116.79 across 32 Modal apps**. Two platform credits ($1
 
 ### B.1 Inside the R&D budget — what $96.45 actually bought
 
-The 25 R&D apps were not random spend; each one was a controlled sweep over a single knob, named after the variable it was probing. Grouping by the *primary knob under test* shows the money tracked the three levers almost evenly — discovery cost is dominated by the two latency levers (ITL + TTFT), with the rest spent locating the user knee and proving the result reproduces.
+The 25 R&D apps were not random spend; each one was a controlled sweep that changed **one** variable while holding the rest at their best-known value. The app name records that variable, which is what makes the grouping below defensible rather than arbitrary: an app is filed under the knob that *moved* in that run. A few apps carry two tokens (e.g. `seq64-16k-8r` sets both `max_num_seqs` and the 16k batch-token window) — those go to whichever knob was actually the experiment, with the second token held fixed from an earlier sweep. Grouped this way, the money tracks the three levers almost evenly: discovery cost is dominated by the two latency levers (ITL + TTFT), with the rest spent locating the user knee and proving the result reproduces.
 
-| Sub-sweep (grouped by primary knob) | Apps | Spend | What it bought |
+| Sub-sweep (grouped by the knob that *moved*) | Apps | Spend | What it bought |
 |---|---:|---:|---|
 | **Compiled CUDA-graph sweep** (`compiled-*`) | 7 | $23.89 | The **ITL lever** — confirmed `--no-fast-boot` drops ITL 38.8 → 5.7 ms across 2r/4r/8r/10r and ramp lengths. |
-| **Prefill-admission / batch-token sweep** (`r*-16k`, `prefill*`, `pc-16k`) | 7 | $30.41 | The **TTFT lever** — found `max_num_batched_tokens` 4096 → 16384 unblocks prefill admission; isolated prefix-cache's effect. |
-| **Replica & user-scaling sweep** (`sharded-*`, `seq64-*`, `zeropause-*`) | 7 | $28.72 | The **GPU divisor + user knee** — mapped throughput vs. replicas and the 300u/460u saturation points; sized load-client shards. |
-| **Baseline / reproducibility / H200 control** (`baseline`, `repro-*`, `clean-*`, `h200-*`) | 4 | $13.43 | The **controls** — the 319K unoptimized baseline, two clean re-runs proving the numbers reproduce, and the H200-vs-H100 comparison. |
+| **Prefill-admission / batch-token sweep** (`r*-16k`, `prefill*`, `seq64-16k`, `pc-16k`) | 7 | $30.41 | The **TTFT lever** — moved `max_num_batched_tokens` 4096 → 16384 (and 32k) to unblock prefill admission; isolated prefix-cache's effect at the 16k window. |
+| **Replica & user-scaling sweep** (`sharded-*`, default-token `seq64-*` user sweeps, `zeropause-*`) | 7 | $28.72 | The **GPU divisor + user knee** — held the serving knobs fixed and moved replica count and user load to map throughput and the 300u/460u saturation points; sized load-client shards. |
+| **Baseline / reproducibility / H200 control** (`baseline`, `repro-*`, `clean-*`, `h200-*`) | 4 | $13.43 | The **controls** — the 319K unoptimized baseline, two clean re-runs proving the numbers reproduce, and the H200-vs-H100 hardware comparison. |
 | **R&D total** | **25** | **$96.45** | |
 
 !!! note "Why so many small re-runs"
