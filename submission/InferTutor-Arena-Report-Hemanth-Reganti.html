@@ -4,13 +4,31 @@
 html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 body { font-family:"Georgia","Cambria","Times New Roman",serif; color:#1a1a1a; line-height:1.5;
   font-size:11.2pt; max-width:740px; margin:0 auto; padding:8px 4px; text-align:justify; hyphens:auto; }
-.titlepage { text-align:center; padding-top:60px; }
-.titlepage h1 { font-size:34pt; border:none; margin:0 0 4px; letter-spacing:.5px; }
-.titlepage h3 { font-size:16pt; font-weight:normal; color:#444; border:none; margin:6px 0; }
-.titlepage h4 { font-size:12pt; font-weight:normal; font-style:italic; color:#555; border:none; margin:2px 0 28px; }
-.titlepage p { text-align:center; margin:5px 0; font-size:11.5pt; }
-.titlepage em { display:block; max-width:560px; margin:30px auto 28px; font-size:12.5pt; color:#333; line-height:1.6; }
-.titlepage hr { width:55%; margin:22px auto; border:none; border-top:1.5px solid #888; }
+.titlepage { text-align:center; padding-top:34px; }
+.titlepage .kicker { font-family:"Helvetica Neue",Arial,sans-serif; text-transform:uppercase;
+  letter-spacing:3px; font-size:9.5pt; color:#2f5ca6; font-weight:600; margin-bottom:10px; }
+.titlepage h1 { font-size:40pt; border:none; margin:0 0 6px; letter-spacing:.5px; color:#0e1a2b; line-height:1.04; }
+.titlepage h3 { font-size:15pt; font-weight:normal; color:#555; border:none; margin:0 0 26px; font-style:italic; }
+.titlepage em { display:block; max-width:600px; margin:28px auto 0; font-size:11.5pt; color:#555; line-height:1.6; }
+.byline { margin:6px auto 30px; }
+.byline .by-label { font-family:"Helvetica Neue",Arial,sans-serif; text-transform:uppercase;
+  letter-spacing:2.5px; font-size:8.5pt; color:#888; }
+.byline .by-name { font-size:27pt; font-weight:700; color:#0e1a2b; letter-spacing:.4px; margin:3px 0 4px;
+  display:inline-block; border-bottom:2.5px solid #2f5ca6; padding:0 14px 5px; }
+.byline .by-sub { font-family:"Helvetica Neue",Arial,sans-serif; font-size:9.5pt; color:#666; margin-top:9px; }
+.resultcards { display:flex; gap:12px; justify-content:center; margin:6px auto 6px; max-width:680px; }
+.rcard { flex:1; border:1px solid #e0e0d8; border-radius:7px; background:#fbfbf8; padding:14px 12px 13px;
+  text-align:center; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+.rcard.primary { border:1.5px solid #2f5ca6; background:#f4f7fc; box-shadow:0 2px 6px rgba(47,92,166,.14); }
+.rcard.primary::before { content:""; display:block; height:3px; width:42px; margin:0 auto 9px;
+  background:#2f5ca6; border-radius:2px; }
+.rc-tag { font-family:"Helvetica Neue",Arial,sans-serif; text-transform:uppercase; letter-spacing:.8px;
+  font-size:7.4pt; color:#7a7a72; font-weight:600; margin-bottom:7px; line-height:1.3; }
+.rcard.primary .rc-tag { color:#2f5ca6; }
+.rc-score { font-family:"Helvetica Neue",Arial,sans-serif; font-size:18pt; font-weight:800; color:#0e1a2b; line-height:1; }
+.rcard.primary .rc-score { color:#1d3f73; font-size:19.5pt; }
+.rc-meta { font-family:"Helvetica Neue",Arial,sans-serif; font-size:8.4pt; color:#555; margin-top:5px; font-weight:600; }
+.rc-sub { font-family:"Helvetica Neue",Arial,sans-serif; font-size:7.6pt; color:#888; margin-top:5px; line-height:1.35; }
 h1 { font-size:21pt; margin:26px 0 12px; color:#111; }
 h2 { font-size:16pt; margin:30px 0 10px; padding-bottom:5px; border-bottom:1.5px solid #333; color:#111; page-break-after:avoid; }
 h3 { font-size:13pt; margin:20px 0 7px; color:#1a1a1a; page-break-after:avoid; }
@@ -33,6 +51,12 @@ pre code { background:transparent; padding:0; color:#222; }
 .formula { text-align:center; font-family:"Cambria Math","Georgia",serif; font-size:12.5pt;
   background:#fafaf8; border:1px solid #e6e6df; border-radius:4px; padding:12px 10px; margin:14px 0; }
 .formula p { text-align:center; margin:2px 0; }
+.figure { text-align:center; margin:16px auto; page-break-inside:avoid; }
+.figure img { max-width:92%; height:auto; border:1px solid #e6e6df; border-radius:4px;
+  box-shadow:0 1px 3px rgba(0,0,0,.06); }
+.figure em { display:block; max-width:96%; margin:7px auto 0; font-size:9.3pt; color:#666;
+  font-style:italic; text-align:center; line-height:1.45; }
+img { max-width:100%; height:auto; }
 .admonition { border:1px solid #d8d8cf; border-left:4px solid #999; border-radius:4px;
   padding:9px 14px 6px; margin:14px 0; background:#fbfbf8; font-size:10.6pt; page-break-inside:avoid; text-align:left; }
 .admonition > .admonition-title { font-family:"Helvetica Neue",Arial,sans-serif; font-weight:700;
@@ -48,24 +72,42 @@ blockquote { border-left:3px solid #bbb; margin:12px 0; padding:2px 16px; color:
 hr { border:none; border-top:1px solid #ddd; margin:20px 0; }
 .pagebreak { page-break-after:always; height:0; } em { color:#333; }
 </style></head><body><div class="titlepage">
+<div class="kicker">Inference Engineering Capstone · 2026</div>
 <h1 id="infertutor-arena">InferTutor Arena</h1>
-<h3 id="capstone-project-documentation">Capstone Project Documentation</h3>
-<h4 id="production-multimodal-llm-serving-on-modal-with-vllm">Production Multimodal LLM Serving on Modal with vLLM</h4>
-<p><strong>Author:</strong> Hemanth Reganti
-<strong>Date:</strong> June 2026
-<strong>Model:</strong> Qwen/Qwen3-VL-4B-Instruct
-<strong>Infrastructure:</strong> Modal (H100 GPUs) + vLLM 0.21.0
-<strong>Track 1 — Multimodal / Mixed (primary):</strong> 149,776,620 <em>(within the 4×H100 budget)</em>
-<strong>Optional Boss Fight (8×H100):</strong> 189,183,025</p>
+<h3 id="production-multimodal-llm-serving-on-modal-with-vllm">Production Multimodal LLM Serving on Modal with vLLM</h3>
+<div class="byline">
+<div class="by-label">Submitted by</div>
+<div class="by-name">Hemanth Reganti</div>
+<div class="by-sub">Qwen/Qwen3-VL-4B-Instruct · vLLM 0.21.0 · Modal (NVIDIA H100) · June 2026</div>
+</div>
+<div class="resultcards">
+<div class="rcard primary">
+<div class="rc-tag">Track 1 — Multimodal · Official</div>
+<div class="rc-score">149,776,620</div>
+<div class="rc-meta">within the 4×H100 budget</div>
+<div class="rc-sub">TTFT 1029 ms · ITL 5.7 ms · 11,649 c/s · 0% err</div>
+</div>
+<div class="rcard">
+<div class="rc-tag">Optional Boss Fight</div>
+<div class="rc-score">189,183,025</div>
+<div class="rc-meta">8×H100 tier</div>
+<div class="rc-sub">TTFT 803 ms · ITL 6.6 ms · 17,425 c/s</div>
+</div>
+<div class="rcard">
+<div class="rc-tag">Lift over baseline</div>
+<div class="rc-score">~469×</div>
+<div class="rc-meta">from 319,183 (1×H100, unoptimized)</div>
+<div class="rc-sub">~54× over the spec's mixed reference</div>
+</div>
+</div>
 <p><em>"Deploy, load-test, measure, and optimize a real multimodal LLM serving pipeline under concurrent production traffic — then engineer it to beat the reference baseline on every metric."</em></p>
-<p>Inference Engineering Capstone · 2026</p>
 </div>
 <div class="pagebreak"></div>
 
 <h2 id="contents">Contents</h2>
 <div class="toc">
 <ul>
-<li><a href="#capstone-project-documentation">Capstone Project Documentation</a></li>
+<li><a href="#production-multimodal-llm-serving-on-modal-with-vllm">Production Multimodal LLM Serving on Modal with vLLM</a></li>
 <li><a href="#contents">Contents</a></li>
 <li><a href="#1-introduction">1. Introduction</a><ul>
 <li><a href="#11-project-overview">1.1 Project overview</a></li>
@@ -80,44 +122,53 @@ hr { border:none; border-top:1px solid #ddd; margin:20px 0; }
 </ul>
 </li>
 <li><a href="#3-methodology">3. Methodology</a></li>
-<li><a href="#4-experiments">4. Experiments</a><ul>
-<li><a href="#41-experiment-1-baseline-1h100-80-users-default-config">4.1 Experiment 1 — Baseline (1×H100, 80 users, default config)</a></li>
-<li><a href="#42-experiment-2-compiled-mode-cuda-graphs-the-breakthrough-against-the-specs-warning">4.2 Experiment 2 — Compiled mode (CUDA graphs): the breakthrough, against the spec's warning</a></li>
-<li><a href="#43-experiment-3-co-locating-the-load-client-inside-modal">4.3 Experiment 3 — Co-locating the load client inside Modal</a></li>
-<li><a href="#44-experiment-4-batch-token-budget-4096-16384">4.4 Experiment 4 — Batch-token budget 4096 → 16384</a></li>
-<li><a href="#45-experiment-5-scale-out-to-4-replicas-and-the-user-sweep">4.5 Experiment 5 — Scale-out to 4 replicas and the user sweep</a></li>
-<li><a href="#46-experiment-6-prefix-caching-on-negative-ablation">4.6 Experiment 6 — Prefix caching ON (negative ablation)</a></li>
-<li><a href="#47-experiment-7-chunked-prefill-off-negative-ablation">4.7 Experiment 7 — Chunked prefill OFF (negative ablation)</a></li>
-<li><a href="#48-experiment-8-boss-fight-8h100-and-the-error-cliff">4.8 Experiment 8 — Boss Fight (8×H100) and the error cliff</a></li>
-<li><a href="#49-experiment-9-quality-probe-is-compiled-on-mixed-actually-safe">4.9 Experiment 9 — Quality probe: is compiled-on-mixed actually safe?</a></li>
+<li><a href="#4-the-mathematics-of-inference-serving">4. The Mathematics of Inference Serving</a><ul>
+<li><a href="#41-two-phases-two-bottlenecks">4.1 Two phases, two bottlenecks</a></li>
+<li><a href="#42-arithmetic-intensity-and-the-roofline">4.2 Arithmetic intensity and the roofline</a></li>
+<li><a href="#43-why-batching-is-the-lever-for-decode">4.3 Why batching is the lever for decode</a></li>
+<li><a href="#44-the-itl-floor-and-what-cuda-graphs-actually-remove">4.4 The ITL floor, and what CUDA graphs actually remove</a></li>
+<li><a href="#45-head-of-line-blocking-chunked-prefill-and-littles-law">4.5 Head-of-line blocking, chunked prefill, and Little's law</a></li>
+<li><a href="#46-the-score-decomposed">4.6 The score, decomposed</a></li>
 </ul>
 </li>
-<li><a href="#5-complete-results-summary">5. Complete Results Summary</a><ul>
-<li><a href="#51-full-experiment-table-track-1-mixed">5.1 Full experiment table (Track 1 — mixed)</a></li>
-<li><a href="#52-score-progression">5.2 Score progression</a></li>
+<li><a href="#5-experiments">5. Experiments</a><ul>
+<li><a href="#51-experiment-1-baseline-1h100-80-users-default-config">5.1 Experiment 1 — Baseline (1×H100, 80 users, default config)</a></li>
+<li><a href="#52-experiment-2-compiled-mode-cuda-graphs-the-breakthrough-against-the-specs-warning">5.2 Experiment 2 — Compiled mode (CUDA graphs): the breakthrough, against the spec's warning</a></li>
+<li><a href="#53-experiment-3-co-locating-the-load-client-inside-modal">5.3 Experiment 3 — Co-locating the load client inside Modal</a></li>
+<li><a href="#54-experiment-4-batch-token-budget-4096-16384">5.4 Experiment 4 — Batch-token budget 4096 → 16384</a></li>
+<li><a href="#55-experiment-5-scale-out-to-4-replicas-and-the-user-sweep">5.5 Experiment 5 — Scale-out to 4 replicas and the user sweep</a></li>
+<li><a href="#56-experiment-6-prefix-caching-on-negative-ablation">5.6 Experiment 6 — Prefix caching ON (negative ablation)</a></li>
+<li><a href="#57-experiment-7-chunked-prefill-off-negative-ablation">5.7 Experiment 7 — Chunked prefill OFF (negative ablation)</a></li>
+<li><a href="#58-experiment-8-boss-fight-8h100-and-the-error-cliff">5.8 Experiment 8 — Boss Fight (8×H100) and the error cliff</a></li>
+<li><a href="#59-experiment-9-quality-probe-is-compiled-on-mixed-actually-safe">5.9 Experiment 9 — Quality probe: is compiled-on-mixed actually safe?</a></li>
 </ul>
 </li>
-<li><a href="#6-key-findings-and-lessons-learned">6. Key Findings and Lessons Learned</a></li>
-<li><a href="#7-unaddressed-bottlenecks-and-future-work">7. Unaddressed Bottlenecks and Future Work</a><ul>
-<li><a href="#71-the-single-endpoint-throughput-ceiling-the-residual-bottleneck">7.1 The single-endpoint throughput ceiling (the residual bottleneck)</a></li>
-<li><a href="#72-a-quality-gated-submission">7.2 A quality-gated submission</a></li>
-<li><a href="#73-speculative-decoding">7.3 Speculative decoding</a></li>
-<li><a href="#74-request-type-aware-routing">7.4 Request-type-aware routing</a></li>
+<li><a href="#6-complete-results-summary">6. Complete Results Summary</a><ul>
+<li><a href="#61-full-experiment-table-track-1-mixed">6.1 Full experiment table (Track 1 — mixed)</a></li>
+<li><a href="#62-score-progression">6.2 Score progression</a></li>
 </ul>
 </li>
-<li><a href="#8-final-configurations">8. Final Configurations</a><ul>
-<li><a href="#81-track-1-multimodal-official-within-budget">8.1 Track 1 — Multimodal (official, within budget)</a></li>
-<li><a href="#82-boss-fight-optional-8h100">8.2 Boss Fight (optional, 8×H100)</a></li>
+<li><a href="#7-key-findings-and-lessons-learned">7. Key Findings and Lessons Learned</a></li>
+<li><a href="#8-unaddressed-bottlenecks-and-future-work">8. Unaddressed Bottlenecks and Future Work</a><ul>
+<li><a href="#81-the-single-endpoint-throughput-ceiling-the-residual-bottleneck">8.1 The single-endpoint throughput ceiling (the residual bottleneck)</a></li>
+<li><a href="#82-a-quality-gated-submission">8.2 A quality-gated submission</a></li>
+<li><a href="#83-speculative-decoding">8.3 Speculative decoding</a></li>
+<li><a href="#84-request-type-aware-routing">8.4 Request-type-aware routing</a></li>
 </ul>
 </li>
-<li><a href="#9-vllm-architecture-deep-dive">9. vLLM Architecture Deep Dive</a><ul>
-<li><a href="#91-pagedattention">9.1 PagedAttention</a></li>
-<li><a href="#92-continuous-batching">9.2 Continuous batching</a></li>
-<li><a href="#93-chunked-prefill">9.3 Chunked prefill</a></li>
-<li><a href="#94-cuda-graph-compilation-compiled-mode">9.4 CUDA-graph compilation (compiled mode)</a></li>
+<li><a href="#9-final-configurations">9. Final Configurations</a><ul>
+<li><a href="#91-track-1-multimodal-official-within-budget">9.1 Track 1 — Multimodal (official, within budget)</a></li>
+<li><a href="#92-boss-fight-optional-8h100">9.2 Boss Fight (optional, 8×H100)</a></li>
 </ul>
 </li>
-<li><a href="#10-conclusion">10. Conclusion</a></li>
+<li><a href="#10-vllm-architecture-deep-dive">10. vLLM Architecture Deep Dive</a><ul>
+<li><a href="#101-pagedattention">10.1 PagedAttention</a></li>
+<li><a href="#102-continuous-batching">10.2 Continuous batching</a></li>
+<li><a href="#103-chunked-prefill">10.3 Chunked prefill</a></li>
+<li><a href="#104-cuda-graph-compilation-compiled-mode">10.4 CUDA-graph compilation (compiled mode)</a></li>
+</ul>
+</li>
+<li><a href="#11-conclusion">11. Conclusion</a></li>
 <li><a href="#appendix-a-reproducibility">Appendix A — Reproducibility</a></li>
 </ul>
 </div>
@@ -191,7 +242,7 @@ hr { border:none; border-top:1px solid #ddd; margin:20px 0; }
 </code></pre>
 <p><em>Figure 1. InferTutor Arena architecture: a Modal-co-located sharded load generator → Modal web-endpoint (load balancer / proxy) → N independent vLLM replicas, each one Qwen3-VL-4B on one H100. Replica count = total GPU count (no tensor parallelism in the submitted runs).</em></p>
 <p><strong>Modal (serverless GPU compute).</strong> Each replica is one container running one vLLM instance on one H100. Modal handles container lifecycle (cold start, scale-up/down), a single shared HTTPS endpoint across all replicas, persistent volumes for weight caching, and <code>@modal.concurrent(max_inputs=N)</code> to control per-container concurrency.</p>
-<p><strong>vLLM 0.21.0.</strong> Exposes an OpenAI-compatible API and implements PagedAttention, continuous batching, chunked prefill, prefix caching, and CUDA-graph compilation (see §9 for the mechanisms that drove the results).</p>
+<p><strong>vLLM 0.21.0.</strong> Exposes an OpenAI-compatible API and implements PagedAttention, continuous batching, chunked prefill, prefix caching, and CUDA-graph compilation (see §10 for the mechanisms that drove the results).</p>
 <p><strong>Qwen/Qwen3-VL-4B-Instruct.</strong> A 4-billion-parameter vision-language model. Dynamic-resolution image processor — images tile into (H/28)×(W/28) patches, so pixel count directly controls vision compute. Runs in bfloat16, fits comfortably in 80 GB with room for a large KV cache.</p>
 <h3 id="22-scoring-formula">2.2 Scoring formula</h3>
 <div class="formula">
@@ -214,7 +265,7 @@ hr { border:none; border-top:1px solid #ddd; margin:20px 0; }
 <p class="admonition-title">The scoring trap</p>
 <p>Adding GPUs divides the score by GPU count. An 8-GPU system must deliver more than 2× the score of 4 GPUs just to break even. If errors rise (as they did past the knee in the 8-GPU sweep), more GPUs can actually <em>lower</em> the score.</p>
 </div>
-<p>The local <code>score_infertutor.py</code> omits <code>quality_pass_rate</code> (assumes 1.0); §6 is my empirical check that the assumption holds for the headline config. The starter reports throughput as streamed content <strong>chunks/s</strong>; the official evaluator may re-tokenize with the Qwen tokenizer.</p>
+<p>The local <code>score_infertutor.py</code> omits <code>quality_pass_rate</code> (assumes 1.0); §5.9 is my empirical check that the assumption holds for the headline config. The starter reports throughput as streamed content <strong>chunks/s</strong>; the official evaluator may re-tokenize with the Qwen tokenizer.</p>
 <h3 id="23-workload-specification">2.3 Workload specification</h3>
 <p>The load tester uses a fixed <code>prompts.json</code>: one ~40-token system prompt shared by all requests, 10 text prompts, 2 long-context prompts, 4 image prompts. Mixed mode samples 55% text / 20% long / 25% image; each request streams up to <code>max_tokens = 96</code>. The tester uses <code>asyncio</code> + <code>httpx</code> streaming, measures TTFT as submission → first content chunk, and ITL as the mean gap between consecutive chunks. Image prompts use a deterministic 256×192 PNG the harness generates. The <code>prompts.json</code> is used <strong>unchanged</strong>.</p>
 <p>Key fixed server settings throughout: <code>max_model_len = 8192</code>, <code>mm_max_pixels = 401,408</code> (= 512·28·28, the starter default), <code>dtype = bfloat16</code>.</p>
@@ -225,8 +276,80 @@ hr { border:none; border-top:1px solid #ddd; margin:20px 0; }
 <p class="admonition-title">Reading the experiment write-ups</p>
 <p>Each experiment below gives the motivating question, the exact runner command (a <em>Listing</em>), a <strong>Result</strong> box with the measured metrics, and a <strong>Key Finding</strong> box with the mechanism. Scores are full integers from the saved JSON. TTFT/ITL are p95 in milliseconds; throughput is aggregate stream chunks/s.</p>
 </div>
-<h2 id="4-experiments">4. Experiments</h2>
-<h3 id="41-experiment-1-baseline-1h100-80-users-default-config">4.1 Experiment 1 — Baseline (1×H100, 80 users, default config)</h3>
+<h2 id="4-the-mathematics-of-inference-serving">4. The Mathematics of Inference Serving</h2>
+<p>Before the experiments, it is worth deriving <em>why</em> the winning knobs work from first principles. Every result in §5 is an instance of two hardware facts: the two phases of autoregressive generation sit on <strong>opposite sides of the GPU's roofline</strong>, and the composite score is a product of terms each of which the hardware bounds independently. Getting the theory right is what turned "try flags and hope" into a directed search.</p>
+<h3 id="41-two-phases-two-bottlenecks">4.1 Two phases, two bottlenecks</h3>
+<p>A single streamed response has two distinct compute phases:</p>
+<ul>
+<li><strong>Prefill</strong> processes the entire prompt (system + question + any image patches) in <strong>one parallel forward pass</strong>, producing the first token. For a prompt of <em>N</em> tokens this is a matrix–matrix multiply (GEMM): every weight is read once from HBM and reused across all <em>N</em> token positions.</li>
+<li><strong>Decode</strong> then generates the rest <strong>one token at a time</strong>. Each step is a matrix–<strong>vector</strong> multiply (GEMV): the full weight matrix is streamed from HBM to produce a <em>single</em> new token.</li>
+</ul>
+<div class="formula">
+<p><strong>TTFT</strong> ≈ prefill latency (compute-bound)  <strong>·</strong>  <strong>ITL</strong> ≈ per-step decode latency (memory-bound)</p>
+</div>
+<p>This split is the key to the whole project: <strong>TTFT lives in prefill, ITL lives in decode, and the two are bounded by different hardware limits.</strong> Optimizing one does not automatically help the other — which is exactly why the score puts both in the denominator.</p>
+<h3 id="42-arithmetic-intensity-and-the-roofline">4.2 Arithmetic intensity and the roofline</h3>
+<p>The deciding quantity for any GPU kernel is its <strong>arithmetic intensity</strong> — FLOPs of compute per byte of memory traffic:</p>
+<div class="formula">
+<p>AI  =  FLOPs performed  /  bytes moved to/from HBM   <strong>[FLOP / byte]</strong></p>
+</div>
+<p>A kernel is <strong>memory-bound</strong> when its AI is below the GPU's <em>ridge point</em> (peak FLOP/s ÷ peak bandwidth), and <strong>compute-bound</strong> above it. For an H100 SXM running bf16:</p>
+<div class="formula">
+<p>AI* (ridge)  =  989 TFLOP/s  ÷  3.35 TB/s  ≈  <strong>295 FLOP / byte</strong></p>
+</div>
+<p>Decode at batch 1 has AI ≈ 1 (read the whole weight, do ~one multiply-add per element to make one token) — deep in the memory-bound region. Prefill of an ~1000-token prompt has AI ≈ 1000 — past the ridge, compute-bound. The two phases sit on opposite sides of the same roofline:</p>
+<div class="figure">
+<p><img alt="Roofline" src="figures/roofline.png" /></p>
+<p><em>Figure 2. The H100 roofline. Decode at batch 1 (AI≈1) is far down the memory-bound slope — its speed is set by HBM bandwidth, not FLOPs. Prefill (AI≈1000) is past the ridge in the compute-bound flat. Batching decode walks the operating point right along the slope (§4.3).</em></p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why this matters for the knobs</p>
+<p>Because decode is memory-bound, <strong>no amount of extra FLOPs speeds it up</strong> — only reducing bytes moved per token, or amortizing the weight read across more tokens, helps. Because prefill is compute-bound, it competes for the <em>same</em> SMs that decode needs, which is why an unmanaged image prefill stalls everyone's decode (the chunked-prefill story, §5.7).</p>
+</div>
+<h3 id="43-why-batching-is-the-lever-for-decode">4.3 Why batching is the lever for decode</h3>
+<p>A single decode step reads all <em>W</em> bytes of weights to make <strong>one</strong> token. If instead <em>B</em> sequences decode together in one batched step, the same single weight read produces <em>B</em> tokens — so arithmetic intensity scales with batch size:</p>
+<div class="formula">
+<p>AI(decode)  ≈  B   →   batching walks the operating point <strong>toward the ridge</strong> at B ≈ 295</p>
+</div>
+<p>This is the entire reason continuous batching and a generous <code>max_num_seqs</code> raise throughput without hurting per-token latency: until the batch is large enough to approach the ridge, decode steps are bandwidth-limited and adding sequences is nearly free.</p>
+<div class="figure">
+<p><img alt="Arithmetic intensity by phase" src="figures/prefill_decode.png" /></p>
+<p><em>Figure 3. Arithmetic intensity per phase. Decode at batch 1 (AI≈1) and even batch 32 (AI≈32) sit below the ridge (AI*≈295) — bandwidth-bound, so batching is almost free throughput. Prefill (AI≈1000) is already compute-bound, so it must be </em><em>scheduled</em><em> (chunked) rather than sped up.</em></p>
+</div>
+<h3 id="44-the-itl-floor-and-what-cuda-graphs-actually-remove">4.4 The ITL floor, and what CUDA graphs actually remove</h3>
+<p>The memory-bound model gives a hard floor for inter-token latency: one decode step cannot finish faster than the time to stream the weights through HBM.</p>
+<div class="formula">
+<p>ITL_floor  ≈  W / BW  =  8 GB (bf16 weights)  /  3.35 TB/s  ≈  <strong>2.4 ms</strong></p>
+</div>
+<p>The eager-mode baseline measured <strong>38.8 ms</strong> — <strong>16× above this floor</strong>. That gap is <em>not</em> compute; it is CPU-side kernel-launch overhead. Each decode step issues ~5–10 separate CUDA kernels, each scheduled individually by the driver (~10–15 µs apiece), and that latency is exposed on every one of tens of thousands of steps per second. CUDA-graph compilation captures the step once and replays it as a single command, removing the CPU from the loop:</p>
+<div class="figure">
+<p><img alt="Compiled vs eager ITL" src="figures/itl_modes.png" /></p>
+<p><em>Figure 4. The eager 38.8 ms ITL is dominated by kernel-launch overhead, not compute. Compiled mode (CUDA graphs) replays the captured decode step and lands at 5.7 ms — approaching the ~2.4 ms memory-bandwidth floor. The ≈33 ms removed is pure scheduling overhead (Experiment 2).</em></p>
+</div>
+<p>This is why compiled mode is the single biggest lever: it attacks the largest <em>removable</em> slack in the denominator. The residual 5.7 − 2.4 ≈ 3.3 ms is real per-step work (attention over the KV cache, sampling) that no compiler can remove.</p>
+<h3 id="45-head-of-line-blocking-chunked-prefill-and-littles-law">4.5 Head-of-line blocking, chunked prefill, and Little's law</h3>
+<p>Because prefill is compute-bound and monopolizes the SMs, a long prefill run as one scheduler step makes <strong>every queued request wait its full duration</strong> — head-of-line blocking. With 25% image traffic, one in four requests carries a 1,000–5,000-token vision prefill, so the TTFT tail is set by these stalls. <strong>Chunked prefill</strong> caps tokens processed per step (<code>max_num_batched_tokens</code>) and interleaves decode between chunks, bounding the blocking time — the mechanism behind Experiment 7.</p>
+<p>The system-level relationship between the metrics is <strong>Little's law</strong>:</p>
+<div class="formula">
+<p>L  =  λ · W       (concurrency  =  throughput × latency)</p>
+</div>
+<p>In-flight requests <em>L</em> equal arrival rate <em>λ</em> times time-in-system <em>W</em>. As users rise, the queue depth <em>L</em> grows; once the GPUs saturate, <em>W</em> (and thus p95 TTFT) climbs faster than λ (throughput), which is the <strong>knee</strong> the user sweep finds in §5.5. Past the knee, <em>W</em> explodes, the queue overflows admission limits, and errors appear — exactly the 400-user collapse.</p>
+<h3 id="46-the-score-decomposed">4.6 The score, decomposed</h3>
+<p>The composite is a product of independently-bounded terms:</p>
+<div class="formula">
+<p>Score  =  goodput · users · quality · (1 − err)  /  ( p95_TTFT · p95_ITL · GPU_count )</p>
+</div>
+<p>Reading it as a product makes the strategy explicit:</p>
+<ul>
+<li><strong>p95_ITL</strong> is bounded below by the memory-bandwidth floor (§4.4) → attack it with <strong>compiled mode</strong> (38.8 → 5.7 ms, the largest single denominator cut).</li>
+<li><strong>p95_TTFT</strong> is bounded by prefill scheduling + the network path → attack it with <strong>chunked prefill</strong> + <strong>co-locating the client</strong> (§5.3, §5.7).</li>
+<li><strong>goodput · users</strong> is bounded by batch occupancy → attack it with <strong>batch-token budget</strong> and <strong>replicas</strong> (§5.4–5.5), but only up to the <strong>knee</strong> where TTFT explodes (Little's law).</li>
+<li><strong>(1 − err)</strong> is a cliff, not a slope → stay in the near-zero-error regime (§5.8).</li>
+<li><strong>GPU_count</strong> divides everything → every added GPU must earn a <em>proportional</em> score gain, which sub-linear scaling (§8.1) ultimately prevents.</li>
+</ul>
+<p>Each experiment in §5 is a controlled test of exactly one of these terms.</p>
+<h2 id="5-experiments">5. Experiments</h2>
+<h3 id="51-experiment-1-baseline-1h100-80-users-default-config">5.1 Experiment 1 — Baseline (1×H100, 80 users, default config)</h3>
 <p>The reference point: the unoptimized starter configuration — eager execution, prefix cache on, chunked prefill on, <code>max_num_batched_tokens = 4096</code> — at a comfortable 80 users on a single GPU, driven from a laptop client.</p>
 <pre><code class="language-bash">python run_infertutor_experiment.py \
   --label mix-1r-base --gpu-type H100 --replicas 1 \
@@ -242,7 +365,7 @@ This is the reference point; every later experiment is measured against it.</p>
 <p class="admonition-title">Reading the baseline</p>
 <p>Two numbers stand out as the obvious targets. ITL is <strong>38.8 ms</strong> — far higher than the model's compute floor, because eager mode pays kernel-launch overhead on every decode step. TTFT is nearly <strong>5 seconds</strong> — the score divides by this, so it alone caps the baseline near 0.3M. The rest of the project is an attack on these two terms.</p>
 </div>
-<h3 id="42-experiment-2-compiled-mode-cuda-graphs-the-breakthrough-against-the-specs-warning">4.2 Experiment 2 — Compiled mode (CUDA graphs): the breakthrough, against the spec's warning</h3>
+<h3 id="52-experiment-2-compiled-mode-cuda-graphs-the-breakthrough-against-the-specs-warning">5.2 Experiment 2 — Compiled mode (CUDA graphs): the breakthrough, against the spec's warning</h3>
 <p>The capstone's own dry-run notes caution that compiled mode "performed poorly on mixed multimodal traffic." I treated that as a hypothesis to test, not a rule to obey. Compiled mode (<code>--no-fast-boot</code>) makes vLLM capture the decode loop as a replayable CUDA graph at startup, eliminating per-step kernel launches.</p>
 <pre><code class="language-bash">python run_infertutor_experiment.py \
   --label mix-4r --gpu-type H100 --replicas 4 \
@@ -261,9 +384,9 @@ This is the reference point; every later experiment is measured against it.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Why this contradicts the dry-run note</p>
-<p>The eager-mode submissions read "performed poorly on mixed" as "don't use compiled mode for mixed." Measured here, compiled mode is <strong>strictly better</strong> on mixed: the 75% text/long share gets graph-replayed decode, while image requests fall back gracefully on the vision path. The dry-run's "poorly" was about <em>latency behavior during warmup</em>, not output correctness — which §6 confirms with a direct quality probe. Cold replicas are warmed with a short client pass before measurement so the ramp isn't served in eager mode.</p>
+<p>The eager-mode submissions read "performed poorly on mixed" as "don't use compiled mode for mixed." Measured here, compiled mode is <strong>strictly better</strong> on mixed: the 75% text/long share gets graph-replayed decode, while image requests fall back gracefully on the vision path. The dry-run's "poorly" was about <em>latency behavior during warmup</em>, not output correctness — which §5.9 confirms with a direct quality probe. Cold replicas are warmed with a short client pass before measurement so the ramp isn't served in eager mode.</p>
 </div>
-<h3 id="43-experiment-3-co-locating-the-load-client-inside-modal">4.3 Experiment 3 — Co-locating the load client inside Modal</h3>
+<h3 id="53-experiment-3-co-locating-the-load-client-inside-modal">5.3 Experiment 3 — Co-locating the load client inside Modal</h3>
 <p>Early runs were pinned at TTFT p95 ≈ 3 s no matter how healthy the server looked. Hypothesis: the bottleneck was not the server but the <strong>path to it</strong> — a residential uplink buffering under high SSE volume, so first-token packets queued behind bulk traffic.</p>
 <pre><code class="language-bash">modal run load_client_modal.py \
   --url https://&lt;you&gt;--infertutor-mix-4r-serve.modal.run \
@@ -279,7 +402,7 @@ This is the reference point; every later experiment is measured against it.</p>
 <p class="admonition-title">The foundational fix: measure the server, not the laptop</p>
 <p>Because the score divides by p95 TTFT, a 3× inflated TTFT caps the score regardless of how fast the GPU is. The laptop's upstream link was bufferbloating under hundreds of concurrent streaming responses; the first-token packet for a new request waited behind megabytes of in-flight tokens for other requests. Removing the laptop from the path is the difference between a client-bottlenecked ~0.3M-class measurement and a real 150M-class server. <code>load_client_modal.py</code> was extended to emit the full mixed workload (the same deterministic diagram PNG, 25/20/55 image/long/text).</p>
 </div>
-<h3 id="44-experiment-4-batch-token-budget-4096-16384">4.4 Experiment 4 — Batch-token budget 4096 → 16384</h3>
+<h3 id="54-experiment-4-batch-token-budget-4096-16384">5.4 Experiment 4 — Batch-token budget 4096 → 16384</h3>
 <p>With the client bottleneck gone, decode slots were sometimes idle because requests weren't being admitted to prefill fast enough. <code>max_num_batched_tokens</code> bounds how many tokens the scheduler can prefill per step.</p>
 <div class="admonition result">
 <p class="admonition-title">max_num_batched_tokens sweep</p>
@@ -289,7 +412,7 @@ This is the reference point; every later experiment is measured against it.</p>
 <p class="admonition-title">Unblocking prefill admission</p>
 <p>At 4096, a single image request's vision-encoder prefill (≈1,000–5,000 tokens) consumes most of the per-step token budget, so text requests wait several scheduler steps just to be admitted. Raising the budget to 16384 lets the scheduler admit a mixed batch — image prefill chunks <em>and</em> several text prefills <em>and</em> ongoing decode — in the same step, so decode never starves. Past 16384, the prefill share grows large enough to delay decode for already-running sequences, raising ITL. This was the decisive <em>server-side</em> knob once bufferbloat was removed.</p>
 </div>
-<h3 id="45-experiment-5-scale-out-to-4-replicas-and-the-user-sweep">4.5 Experiment 5 — Scale-out to 4 replicas and the user sweep</h3>
+<h3 id="55-experiment-5-scale-out-to-4-replicas-and-the-user-sweep">5.5 Experiment 5 — Scale-out to 4 replicas and the user sweep</h3>
 <p>With the levers in place (compiled, b16384, co-located client, prefix off, chunked on), I scaled to the 4-GPU budget and swept user count to find where the composite peaks. Replicas — not tensor parallelism — are the scaling unit for a 4B model that fits on one GPU.</p>
 <table>
 <thead>
@@ -337,6 +460,10 @@ This is the reference point; every later experiment is measured against it.</p>
 </tr>
 </tbody>
 </table>
+<div class="figure">
+<p><img alt="User knee" src="figures/user_knee.png" /></p>
+<p><em>Figure 5. The user knee on 4×H100. Score (blue) peaks at 300 users; TTFT p95 (amber) stays near 1 s through the knee, then explodes 3.5× to 3.6 s by 400 users as the prefill queue saturates (Little's law, §4.5) — dragging the composite down even though more users are offered.</em></p>
+</div>
 <div class="admonition result">
 <p class="admonition-title">User knee (4×H100, mixed)</p>
 <p>The composite peaks at <strong>300 users = 149,776,620</strong> with <strong>0 errors</strong>. Below it (240u) leaves throughput on the table; above it TTFT climbs faster than throughput until the prefill queue saturates and errors appear (400u).</p>
@@ -349,7 +476,7 @@ This is the reference point; every later experiment is measured against it.</p>
 <p class="admonition-title">vs the spec's mixed reference</p>
 <p>The instructor's reference mixed run (eager, 4r, 120u) reports ~897.6 ms TTFT, 38.1 ms ITL, 2,756 chunks/s. The headline config delivers <strong>5.7 ms ITL (≈6.7× better)</strong> and <strong>11,649 chunks/s (≈4.2× higher)</strong> at 2.5× the users — the ITL win is what the composite rewards most.</p>
 </div>
-<h3 id="46-experiment-6-prefix-caching-on-negative-ablation">4.6 Experiment 6 — Prefix caching ON (negative ablation)</h3>
+<h3 id="56-experiment-6-prefix-caching-on-negative-ablation">5.6 Experiment 6 — Prefix caching ON (negative ablation)</h3>
 <p>The intuitive optimization: all requests share a ~40-token system prompt, so caching its KV blocks <em>should</em> save prefill work and lower TTFT. I tested the opposite hypothesis by flipping prefix caching back on at the otherwise-winning 300-user config.</p>
 <pre><code class="language-bash"># identical to the headline, but WITHOUT --no-prefix-cache
 modal run load_client_modal.py --url &lt;endpoint&gt; \
@@ -365,7 +492,7 @@ modal run load_client_modal.py --url &lt;endpoint&gt; \
 <p class="admonition-title">Overhead exceeds savings at short prefixes — and disrupts CUDA graphs</p>
 <p>At a 40-token system prompt the KV savings from a cache hit are negligible (skip prefill for ~40 tokens). But the caching machinery costs per request: content-hash each KV block, look it up in the cache index, reference-count for eviction, acquire/release locks. Overhead &gt; savings. Worse, in <strong>compiled mode</strong> prefix caching makes per-request KV-block allocation vary (some blocks reused, some fresh), breaking the CUDA graph's assumption of uniform memory-access patterns and forcing partial re-capture — which is why the TTFT damage here (≈3×) is larger than the eager-mode version of this effect. The textbook "obvious optimization that makes things 4× worse," caught only by measuring.</p>
 </div>
-<h3 id="47-experiment-7-chunked-prefill-off-negative-ablation">4.7 Experiment 7 — Chunked prefill OFF (negative ablation)</h3>
+<h3 id="57-experiment-7-chunked-prefill-off-negative-ablation">5.7 Experiment 7 — Chunked prefill OFF (negative ablation)</h3>
 <p>To quantify chunked prefill's value for image-heavy traffic, I disabled it at the headline config. Without it, vLLM runs each prefill to completion before any decode step.</p>
 <pre><code class="language-bash"># identical to the headline, but WITH --no-chunked-prefill
 modal run load_client_modal.py --url &lt;endpoint&gt; \
@@ -381,7 +508,7 @@ modal run load_client_modal.py --url &lt;endpoint&gt; \
 <p class="admonition-title">Chunked prefill protects mixed-mode TTFT</p>
 <p>With 25% image traffic, one in four requests carries a large vision-encoder prefill. Without chunking, that prefill runs as a single scheduler step and <em>every request queued behind it</em> — including short text requests — waits the full prefill duration before getting its first token. Chunked prefill splits the long prefill into token-budget chunks and interleaves decode steps between them, so text requests stream within milliseconds. Turning it off re-introduces head-of-line blocking; the latency tail inflates and the system tips into errors.</p>
 </div>
-<h3 id="48-experiment-8-boss-fight-8h100-and-the-error-cliff">4.8 Experiment 8 — Boss Fight (8×H100) and the error cliff</h3>
+<h3 id="58-experiment-8-boss-fight-8h100-and-the-error-cliff">5.8 Experiment 8 — Boss Fight (8×H100) and the error cliff</h3>
 <p>The optional boss fight allows 8 H100s. Hypothesis: with 8 replicas the per-GPU load halves, so the same per-replica operating point supports ~2× the users. The catch is the ÷8 in the denominator — the tier only wins if errors stay near zero. I swept user count to find the cliff.</p>
 <pre><code class="language-bash">python run_infertutor_experiment.py --label mix-8r --gpu-type H100 --replicas 8 \
   --no-fast-boot --no-prefix-cache --max-seqs 32 --max-batch-tokens 16384 \
@@ -437,6 +564,10 @@ modal run load_client_modal.py --url &lt;endpoint&gt; \
 </tr>
 </tbody>
 </table>
+<div class="figure">
+<p><img alt="Error cliff" src="figures/error_cliff.png" /></p>
+<p><em>Figure 6. The 8×H100 error cliff. Score (bars) is highest at 460 users where errors are 0.5%; from 460→500 users aggregate throughput barely moves but error rate (red) crosses ~3%, and the <code>(1 − err)</code> factor plus inflated TTFT collapse the score back to the 4-GPU level. The boss tier is a knife-edge, not a slope.</em></p>
+</div>
 <div class="admonition result">
 <p class="admonition-title">Boss fight</p>
 <p>Best 8-GPU run = <strong>189,183,025</strong> at 460 users (0.5% errors, TTFT 803 ms, 17,425 chunks/s). Pushing to 500 users (3.3% errors) collapses the score back to the 4-GPU level despite <em>higher</em> aggregate throughput.</p>
@@ -447,9 +578,9 @@ modal run load_client_modal.py --url &lt;endpoint&gt; \
 </div>
 <div class="admonition note">
 <p class="admonition-title">Why 8 GPUs is only 1.5×, not 2×</p>
-<p>Aggregate throughput is ~17.4k c/s on 8 GPUs vs ~11.6k on 4 — <strong>1.5× for double the hardware</strong>. That sub-linear scaling is the single-endpoint ceiling examined in §7.</p>
+<p>Aggregate throughput is ~17.4k c/s on 8 GPUs vs ~11.6k on 4 — <strong>1.5× for double the hardware</strong>. That sub-linear scaling is the single-endpoint ceiling examined in §8.</p>
 </div>
-<h3 id="49-experiment-9-quality-probe-is-compiled-on-mixed-actually-safe">4.9 Experiment 9 — Quality probe: is compiled-on-mixed actually safe?</h3>
+<h3 id="59-experiment-9-quality-probe-is-compiled-on-mixed-actually-safe">5.9 Experiment 9 — Quality probe: is compiled-on-mixed actually safe?</h3>
 <p>Because the official score multiplies by <code>quality_pass_rate</code> and my headline keeps compiled mode on for mixed (the lever the spec warns about), I measured answer quality directly instead of assuming it. <code>probe_quality.py</code> sends the <strong>official</strong> prompts (all 4 image prompts with the harness's 256×192 PNG, both long prompts, 4 text prompts) <strong>non-streaming</strong> to two 1×H100 endpoints that differ <em>only</em> in execution mode, captures the full answers, and flags any empty / truncated / repetitive / mojibake output.</p>
 <pre><code class="language-bash">python probe_quality.py --url &lt;compiled-endpoint&gt; --label compiled-mixed --mode mixed
 python probe_quality.py --url &lt;eager-endpoint&gt;    --label eager-mixed    --mode mixed
@@ -490,8 +621,8 @@ python probe_quality.py --url &lt;eager-endpoint&gt;    --label eager-mixed    -
 <p class="admonition-title">The dry-run's 'poorly' was latency, not correctness</p>
 <p>The model genuinely reads the diagram under both modes (it returns "decode-heavy vs prefill-heavy," "replicas vs tensor-parallelism," concrete knob suggestions). Compiled mode does not degrade <code>quality_pass_rate</code> — so the headline carries no quality penalty, and the score it earns is real. Raw outputs: <code>quality_compiled-mixed_*.json</code>, <code>quality_eager-mixed_*.json</code>.</p>
 </div>
-<h2 id="5-complete-results-summary">5. Complete Results Summary</h2>
-<h3 id="51-full-experiment-table-track-1-mixed">5.1 Full experiment table (Track 1 — mixed)</h3>
+<h2 id="6-complete-results-summary">6. Complete Results Summary</h2>
+<h3 id="61-full-experiment-table-track-1-mixed">6.1 Full experiment table (Track 1 — mixed)</h3>
 <table>
 <thead>
 <tr>
@@ -655,18 +786,13 @@ python probe_quality.py --url &lt;eager-endpoint&gt;    --label eager-mixed    -
 </tbody>
 </table>
 <p><em>TTFT and ITL are p95 in milliseconds. Throughput is aggregate stream chunks/s. Bold rows are the submitted results. Spec reference baselines for orientation: eager/4r/120u = 897.6 ms / 38.1 ms / 2,756 c/s; eager/2r/100u = 1,168.9 ms / 28.7 ms / 2,243 c/s.</em></p>
-<h3 id="52-score-progression">5.2 Score progression</h3>
-<pre><code>   319,183  ── baseline (1×H100, eager, prefix-on, b4096, 80u)
-              │  + compiled mode (ITL 38.8→5.7)
-              │  + co-located Modal client (TTFT ~3s→~1s)
-              │  + max_num_batched_tokens 4096→16384
-              │  + scale to 4×H100, tune user knee to 300u
- 149,776,620  ◀ official (4×H100, 300u, 0 errors)   ← within budget
-              │  + scale to 8×H100, hold the error cliff at 460u
- 189,183,025  ◀ boss fight (8×H100, 460u, 0.5% errors)
-</code></pre>
-<p><em>Figure 2. Score progression from the unoptimized baseline (319K) to the in-budget headline (150M) and the optional boss fight (189M) — a ~469× lift end-to-end, ~54× over the spec's mixed reference at the in-budget result.</em></p>
-<h2 id="6-key-findings-and-lessons-learned">6. Key Findings and Lessons Learned</h2>
+<h3 id="62-score-progression">6.2 Score progression</h3>
+<div class="figure">
+<p><img alt="Score progression" src="figures/score_progression.png" /></p>
+<p><em>Figure 7. Score progression (log scale) from the unoptimized baseline (319K) to the in-budget headline (150M) and the optional boss fight (189M) — a ~469× lift end-to-end, ~54× over the spec's mixed reference at the in-budget result.</em></p>
+</div>
+<p>The stacked levers that produce this progression: baseline (1×H100, eager, prefix-on, b4096, 80u) → <strong>+ compiled mode</strong> (ITL 38.8→5.7) → <strong>+ co-located Modal client</strong> (TTFT ~3s→~1s) → <strong>+ <code>max_num_batched_tokens</code> 4096→16384</strong> → <strong>+ scale to 4×H100, tune the user knee to 300u</strong> = <strong>149,776,620</strong> (official, within budget) → <strong>+ scale to 8×H100, hold the error cliff at 460u</strong> = <strong>189,183,025</strong> (boss fight).</p>
+<h2 id="7-key-findings-and-lessons-learned">7. Key Findings and Lessons Learned</h2>
 <ol>
 <li><strong>CUDA-graph compilation is the decisive lever (ITL 38.8 → 5.7 ms),</strong> and it works on mixed traffic — directly contradicting the dry-run's caution. The biggest win came from testing the warning instead of obeying it.</li>
 <li><strong>The path matters as much as the server.</strong> Co-locating the load client (TTFT ~3 s → ~1 s) was the difference between a client-bottlenecked measurement and a real one. Always confirm you're measuring the system, not the network to it.</li>
@@ -679,17 +805,17 @@ python probe_quality.py --url &lt;eager-endpoint&gt;    --label eager-mixed    -
 <p class="admonition-title">The overarching lesson</p>
 <p>Intuition about system optimizations is wrong without measurement. Prefix caching was "obviously" helpful and hurt. Compiled mode was "known" to be bad for mixed and was the biggest win. Every optimization had to be validated against the <em>full</em> scoring function, not just the metric it was meant to improve.</p>
 </div>
-<h2 id="7-unaddressed-bottlenecks-and-future-work">7. Unaddressed Bottlenecks and Future Work</h2>
-<h3 id="71-the-single-endpoint-throughput-ceiling-the-residual-bottleneck">7.1 The single-endpoint throughput ceiling (the residual bottleneck)</h3>
+<h2 id="8-unaddressed-bottlenecks-and-future-work">8. Unaddressed Bottlenecks and Future Work</h2>
+<h3 id="81-the-single-endpoint-throughput-ceiling-the-residual-bottleneck">8.1 The single-endpoint throughput ceiling (the residual bottleneck)</h3>
 <p>Both 8- and 4-replica runs plateau in aggregate throughput — ~17.4k c/s on 8 GPUs vs ~11.6k on 4, i.e. <strong>1.5× for double the GPUs</strong>. That sub-linear scaling points to a single Modal web-endpoint proxy as the shared chokepoint: all concurrency piles onto one proxy, deepening the prefill queue and coupling throughput to TTFT. Within that topology every knob is already at its measured optimum. Going further is <strong>architectural</strong> — multiple independent load-balanced endpoints so throughput scales without piling concurrency onto one proxy.</p>
-<h3 id="72-a-quality-gated-submission">7.2 A quality-gated submission</h3>
-<p>The official score multiplies by <code>quality_pass_rate</code>, which the local harness assumes = 1.0. §6's probe supports that empirically; a full gated run with a scored rubric over the official prompts would close the last gap.</p>
-<h3 id="73-speculative-decoding">7.3 Speculative decoding</h3>
+<h3 id="82-a-quality-gated-submission">8.2 A quality-gated submission</h3>
+<p>The official score multiplies by <code>quality_pass_rate</code>, which the local harness assumes = 1.0. §5.9's probe supports that empirically; a full gated run with a scored rubric over the official prompts would close the last gap.</p>
+<h3 id="83-speculative-decoding">8.3 Speculative decoding</h3>
 <p>For a 4B model, a ~0.5B draft model (e.g. Qwen3-0.6B) could give 2–3× decode speedup, lowering ITL further — directly on the denominator.</p>
-<h3 id="74-request-type-aware-routing">7.4 Request-type-aware routing</h3>
+<h3 id="84-request-type-aware-routing">8.4 Request-type-aware routing</h3>
 <p>Separating short text from long/image traffic onto different replica pools would let each pool tune <code>max_num_seqs</code> and batch budget independently, reducing head-of-line blocking and pushing the mixed user ceiling past 300.</p>
-<h2 id="8-final-configurations">8. Final Configurations</h2>
-<h3 id="81-track-1-multimodal-official-within-budget">8.1 Track 1 — Multimodal (official, within budget)</h3>
+<h2 id="9-final-configurations">9. Final Configurations</h2>
+<h3 id="91-track-1-multimodal-official-within-budget">9.1 Track 1 — Multimodal (official, within budget)</h3>
 <pre><code class="language-bash">set PYTHONUTF8=1
 # Deploy: 4×H100, compiled, seq32, batch-tokens 16384, no prefix cache, chunked prefill on, ci128
 python run_infertutor_experiment.py \
@@ -711,7 +837,7 @@ python score_infertutor.py results_infertutor/mix-4r-300u_mixed_300u_&lt;ts&gt;.
 JSON: <code>mix-4r-300u_mixed_300u_1781402073.json</code>.</p>
 </div>
 <p><strong>Why this configuration wins:</strong> (1) <code>--no-fast-boot</code> enables compiled mode → ITL 38.8 → 5.7 ms; (2) <code>--no-prefix-cache</code> removes per-request overhead and keeps CUDA graphs clean; (3) chunked prefill on protects TTFT against 25% image traffic; (4) <code>max-batch-tokens 16384</code> unblocks prefill admission; (5) 300 users (~75/GPU) sits exactly on the throughput knee with 0 errors; (6) the co-located client ensures the measurement reflects the server, not the laptop.</p>
-<h3 id="82-boss-fight-optional-8h100">8.2 Boss Fight (optional, 8×H100)</h3>
+<h3 id="92-boss-fight-optional-8h100">9.2 Boss Fight (optional, 8×H100)</h3>
 <p>Identical flags with <code>--replicas 8</code>, then <code>modal run … --users 460 --shards 20 --ramp-up 90 --total-gpus 8</code>.</p>
 <div class="admonition result">
 <p class="admonition-title">Boss-fight final</p>
@@ -722,17 +848,17 @@ JSON: <code>mix-8r-460u_mixed_460u_1781404394.json</code>.</p>
 <p class="admonition-title">Cleanup</p>
 <p>All <code>infertutor-*</code> and <code>arena-loadgen</code> apps are stopped after each run (<code>modal app stop … --yes</code>); <code>modal app list</code> shows 0 running. Nothing is billing.</p>
 </div>
-<h2 id="9-vllm-architecture-deep-dive">9. vLLM Architecture Deep Dive</h2>
+<h2 id="10-vllm-architecture-deep-dive">10. vLLM Architecture Deep Dive</h2>
 <p>This section explains the core vLLM mechanisms that directly drove the results.</p>
-<h3 id="91-pagedattention">9.1 PagedAttention</h3>
+<h3 id="101-pagedattention">10.1 PagedAttention</h3>
 <p>Traditional attention needs a contiguous KV-cache block per sequence, causing internal fragmentation (reserved-but-unused memory) and external fragmentation (no contiguous block large enough despite free total memory). PagedAttention manages the KV cache in fixed-size, non-contiguous <strong>pages</strong> (like OS virtual memory), looked up via a block table. This gives higher batch occupancy and is the foundation for prefix sharing — and it's what lets <code>max_num_seqs = 32</code> coexist with long prompts on one H100.</p>
-<h3 id="92-continuous-batching">9.2 Continuous batching</h3>
+<h3 id="102-continuous-batching">10.2 Continuous batching</h3>
 <p>Static batching waits to fill a fixed-size batch, then processes it until all sequences finish — the GPU idles waiting on the slowest sequence. Continuous batching inserts new requests into the running batch at any decode step and reuses a slot the instant a sequence completes, keeping the GPU near 100% utilized. <code>max_num_seqs</code> and <code>max_num_batched_tokens</code> bound how aggressively it does this.</p>
-<h3 id="93-chunked-prefill">9.3 Chunked prefill</h3>
+<h3 id="103-chunked-prefill">10.3 Chunked prefill</h3>
 <p>vLLM's scheduler can run all prefills before any decode step — optimal for uniform workloads but disastrous for mixed traffic, where a 1,000–5,000-token image prefill blocks every queued text request (Experiment 7). Chunked prefill caps the tokens processed per step (<code>max-batch-tokens</code>); long prefills are split into chunks and the scheduler interleaves decode steps between them, so short requests stream without waiting for the whole image prefill.</p>
-<h3 id="94-cuda-graph-compilation-compiled-mode">9.4 CUDA-graph compilation (compiled mode)</h3>
+<h3 id="104-cuda-graph-compilation-compiled-mode">10.4 CUDA-graph compilation (compiled mode)</h3>
 <p>PyTorch eager execution issues CUDA kernels one at a time: CPU serializes each call, enqueues it, the driver schedules it, the GPU runs it. CUDA graphs capture all kernels for a decode step once during warmup; serving then issues a single "replay graph" command and the GPU runs the whole sequence without CPU-side scheduling. The constraint is that the graph is captured for specific tensor shapes — predictable decode batches replay cleanly (Experiment 2), but variable-length vision-encoder outputs fall back to eager, which is why the warning existed. Measured here, the text/long majority still gets the full benefit and image quality is unaffected (Experiment 9).</p>
-<h2 id="10-conclusion">10. Conclusion</h2>
+<h2 id="11-conclusion">11. Conclusion</h2>
 <p>This capstone demonstrates the full lifecycle of a production inference-engineering problem: infrastructure setup, systematic single-variable experimentation, and a final configuration that beats the reference baseline on every measured metric while staying within budget.</p>
 <table>
 <thead>

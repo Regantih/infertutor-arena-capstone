@@ -1,21 +1,39 @@
 <div class="titlepage" markdown="1">
 
+<div class="kicker">Inference Engineering Capstone · 2026</div>
+
 # InferTutor Arena
 
-### Capstone Project Documentation
+### Production Multimodal LLM Serving on Modal with vLLM
 
-#### Production Multimodal LLM Serving on Modal with vLLM
+<div class="byline">
+<div class="by-label">Submitted by</div>
+<div class="by-name">Hemanth Reganti</div>
+<div class="by-sub">Qwen/Qwen3-VL-4B-Instruct · vLLM 0.21.0 · Modal (NVIDIA H100) · June 2026</div>
+</div>
 
-**Author:** Hemanth Reganti
-**Date:** June 2026
-**Model:** Qwen/Qwen3-VL-4B-Instruct
-**Infrastructure:** Modal (H100 GPUs) + vLLM 0.21.0
-**Track 1 — Multimodal / Mixed (primary):** 149,776,620 *(within the 4×H100 budget)*
-**Optional Boss Fight (8×H100):** 189,183,025
+<div class="resultcards">
+<div class="rcard primary">
+<div class="rc-tag">Track 1 — Multimodal · Official</div>
+<div class="rc-score">149,776,620</div>
+<div class="rc-meta">within the 4×H100 budget</div>
+<div class="rc-sub">TTFT 1029 ms · ITL 5.7 ms · 11,649 c/s · 0% err</div>
+</div>
+<div class="rcard">
+<div class="rc-tag">Optional Boss Fight</div>
+<div class="rc-score">189,183,025</div>
+<div class="rc-meta">8×H100 tier</div>
+<div class="rc-sub">TTFT 803 ms · ITL 6.6 ms · 17,425 c/s</div>
+</div>
+<div class="rcard">
+<div class="rc-tag">Lift over baseline</div>
+<div class="rc-score">~469×</div>
+<div class="rc-meta">from 319,183 (1×H100, unoptimized)</div>
+<div class="rc-sub">~54× over the spec's mixed reference</div>
+</div>
+</div>
 
 *"Deploy, load-test, measure, and optimize a real multimodal LLM serving pipeline under concurrent production traffic — then engineer it to beat the reference baseline on every metric."*
-
-Inference Engineering Capstone · 2026
 
 </div>
 
@@ -83,7 +101,7 @@ The serving stack is three layers working together: a co-located load generator,
 
 **Modal (serverless GPU compute).** Each replica is one container running one vLLM instance on one H100. Modal handles container lifecycle (cold start, scale-up/down), a single shared HTTPS endpoint across all replicas, persistent volumes for weight caching, and `@modal.concurrent(max_inputs=N)` to control per-container concurrency.
 
-**vLLM 0.21.0.** Exposes an OpenAI-compatible API and implements PagedAttention, continuous batching, chunked prefill, prefix caching, and CUDA-graph compilation (see §9 for the mechanisms that drove the results).
+**vLLM 0.21.0.** Exposes an OpenAI-compatible API and implements PagedAttention, continuous batching, chunked prefill, prefix caching, and CUDA-graph compilation (see §10 for the mechanisms that drove the results).
 
 **Qwen/Qwen3-VL-4B-Instruct.** A 4-billion-parameter vision-language model. Dynamic-resolution image processor — images tile into (H/28)×(W/28) patches, so pixel count directly controls vision compute. Runs in bfloat16, fits comfortably in 80 GB with room for a large KV cache.
 
@@ -111,7 +129,7 @@ where goodput = aggregate chunks/s.
 !!! warning "The scoring trap"
     Adding GPUs divides the score by GPU count. An 8-GPU system must deliver more than 2× the score of 4 GPUs just to break even. If errors rise (as they did past the knee in the 8-GPU sweep), more GPUs can actually *lower* the score.
 
-The local `score_infertutor.py` omits `quality_pass_rate` (assumes 1.0); §6 is my empirical check that the assumption holds for the headline config. The starter reports throughput as streamed content **chunks/s**; the official evaluator may re-tokenize with the Qwen tokenizer.
+The local `score_infertutor.py` omits `quality_pass_rate` (assumes 1.0); §5.9 is my empirical check that the assumption holds for the headline config. The starter reports throughput as streamed content **chunks/s**; the official evaluator may re-tokenize with the Qwen tokenizer.
 
 ### 2.3 Workload specification
 
@@ -130,9 +148,136 @@ The discipline matters because intuition was wrong about half the time here — 
     Each experiment below gives the motivating question, the exact runner command (a *Listing*), a **Result** box with the measured metrics, and a **Key Finding** box with the mechanism. Scores are full integers from the saved JSON. TTFT/ITL are p95 in milliseconds; throughput is aggregate stream chunks/s.
 
 
-## 4. Experiments
+## 4. The Mathematics of Inference Serving
 
-### 4.1 Experiment 1 — Baseline (1×H100, 80 users, default config)
+Before the experiments, it is worth deriving *why* the winning knobs work from first principles. Every result in §5 is an instance of two hardware facts: the two phases of autoregressive generation sit on **opposite sides of the GPU's roofline**, and the composite score is a product of terms each of which the hardware bounds independently. Getting the theory right is what turned "try flags and hope" into a directed search.
+
+### 4.1 Two phases, two bottlenecks
+
+A single streamed response has two distinct compute phases:
+
+- **Prefill** processes the entire prompt (system + question + any image patches) in **one parallel forward pass**, producing the first token. For a prompt of *N* tokens this is a matrix–matrix multiply (GEMM): every weight is read once from HBM and reused across all *N* token positions.
+- **Decode** then generates the rest **one token at a time**. Each step is a matrix–**vector** multiply (GEMV): the full weight matrix is streamed from HBM to produce a *single* new token.
+
+<div class="formula" markdown="1">
+
+**TTFT** ≈ prefill latency (compute-bound)  **·**  **ITL** ≈ per-step decode latency (memory-bound)
+
+</div>
+
+This split is the key to the whole project: **TTFT lives in prefill, ITL lives in decode, and the two are bounded by different hardware limits.** Optimizing one does not automatically help the other — which is exactly why the score puts both in the denominator.
+
+### 4.2 Arithmetic intensity and the roofline
+
+The deciding quantity for any GPU kernel is its **arithmetic intensity** — FLOPs of compute per byte of memory traffic:
+
+<div class="formula" markdown="1">
+
+AI  =  FLOPs performed  /  bytes moved to/from HBM   **[FLOP / byte]**
+
+</div>
+
+A kernel is **memory-bound** when its AI is below the GPU's *ridge point* (peak FLOP/s ÷ peak bandwidth), and **compute-bound** above it. For an H100 SXM running bf16:
+
+<div class="formula" markdown="1">
+
+AI\* (ridge)  =  989 TFLOP/s  ÷  3.35 TB/s  ≈  **295 FLOP / byte**
+
+</div>
+
+Decode at batch 1 has AI ≈ 1 (read the whole weight, do ~one multiply-add per element to make one token) — deep in the memory-bound region. Prefill of an ~1000-token prompt has AI ≈ 1000 — past the ridge, compute-bound. The two phases sit on opposite sides of the same roofline:
+
+<div class="figure" markdown="1">
+
+![Roofline](figures/roofline.png)
+
+*Figure 2. The H100 roofline. Decode at batch 1 (AI≈1) is far down the memory-bound slope — its speed is set by HBM bandwidth, not FLOPs. Prefill (AI≈1000) is past the ridge in the compute-bound flat. Batching decode walks the operating point right along the slope (§4.3).*
+
+</div>
+
+!!! note "Why this matters for the knobs"
+    Because decode is memory-bound, **no amount of extra FLOPs speeds it up** — only reducing bytes moved per token, or amortizing the weight read across more tokens, helps. Because prefill is compute-bound, it competes for the *same* SMs that decode needs, which is why an unmanaged image prefill stalls everyone's decode (the chunked-prefill story, §5.7).
+
+### 4.3 Why batching is the lever for decode
+
+A single decode step reads all *W* bytes of weights to make **one** token. If instead *B* sequences decode together in one batched step, the same single weight read produces *B* tokens — so arithmetic intensity scales with batch size:
+
+<div class="formula" markdown="1">
+
+AI(decode)  ≈  B   →   batching walks the operating point **toward the ridge** at B ≈ 295
+
+</div>
+
+This is the entire reason continuous batching and a generous `max_num_seqs` raise throughput without hurting per-token latency: until the batch is large enough to approach the ridge, decode steps are bandwidth-limited and adding sequences is nearly free.
+
+<div class="figure" markdown="1">
+
+![Arithmetic intensity by phase](figures/prefill_decode.png)
+
+*Figure 3. Arithmetic intensity per phase. Decode at batch 1 (AI≈1) and even batch 32 (AI≈32) sit below the ridge (AI\*≈295) — bandwidth-bound, so batching is almost free throughput. Prefill (AI≈1000) is already compute-bound, so it must be **scheduled** (chunked) rather than sped up.*
+
+</div>
+
+### 4.4 The ITL floor, and what CUDA graphs actually remove
+
+The memory-bound model gives a hard floor for inter-token latency: one decode step cannot finish faster than the time to stream the weights through HBM.
+
+<div class="formula" markdown="1">
+
+ITL_floor  ≈  W / BW  =  8 GB (bf16 weights)  /  3.35 TB/s  ≈  **2.4 ms**
+
+</div>
+
+The eager-mode baseline measured **38.8 ms** — **16× above this floor**. That gap is *not* compute; it is CPU-side kernel-launch overhead. Each decode step issues ~5–10 separate CUDA kernels, each scheduled individually by the driver (~10–15 µs apiece), and that latency is exposed on every one of tens of thousands of steps per second. CUDA-graph compilation captures the step once and replays it as a single command, removing the CPU from the loop:
+
+<div class="figure" markdown="1">
+
+![Compiled vs eager ITL](figures/itl_modes.png)
+
+*Figure 4. The eager 38.8 ms ITL is dominated by kernel-launch overhead, not compute. Compiled mode (CUDA graphs) replays the captured decode step and lands at 5.7 ms — approaching the ~2.4 ms memory-bandwidth floor. The ≈33 ms removed is pure scheduling overhead (Experiment 2).*
+
+</div>
+
+This is why compiled mode is the single biggest lever: it attacks the largest *removable* slack in the denominator. The residual 5.7 − 2.4 ≈ 3.3 ms is real per-step work (attention over the KV cache, sampling) that no compiler can remove.
+
+### 4.5 Head-of-line blocking, chunked prefill, and Little's law
+
+Because prefill is compute-bound and monopolizes the SMs, a long prefill run as one scheduler step makes **every queued request wait its full duration** — head-of-line blocking. With 25% image traffic, one in four requests carries a 1,000–5,000-token vision prefill, so the TTFT tail is set by these stalls. **Chunked prefill** caps tokens processed per step (`max_num_batched_tokens`) and interleaves decode between chunks, bounding the blocking time — the mechanism behind Experiment 7.
+
+The system-level relationship between the metrics is **Little's law**:
+
+<div class="formula" markdown="1">
+
+L  =  λ · W       (concurrency  =  throughput × latency)
+
+</div>
+
+In-flight requests *L* equal arrival rate *λ* times time-in-system *W*. As users rise, the queue depth *L* grows; once the GPUs saturate, *W* (and thus p95 TTFT) climbs faster than λ (throughput), which is the **knee** the user sweep finds in §5.5. Past the knee, *W* explodes, the queue overflows admission limits, and errors appear — exactly the 400-user collapse.
+
+### 4.6 The score, decomposed
+
+The composite is a product of independently-bounded terms:
+
+<div class="formula" markdown="1">
+
+Score  =  goodput · users · quality · (1 − err)  /  ( p95_TTFT · p95_ITL · GPU_count )
+
+</div>
+
+Reading it as a product makes the strategy explicit:
+
+- **p95_ITL** is bounded below by the memory-bandwidth floor (§4.4) → attack it with **compiled mode** (38.8 → 5.7 ms, the largest single denominator cut).
+- **p95_TTFT** is bounded by prefill scheduling + the network path → attack it with **chunked prefill** + **co-locating the client** (§5.3, §5.7).
+- **goodput · users** is bounded by batch occupancy → attack it with **batch-token budget** and **replicas** (§5.4–5.5), but only up to the **knee** where TTFT explodes (Little's law).
+- **(1 − err)** is a cliff, not a slope → stay in the near-zero-error regime (§5.8).
+- **GPU_count** divides everything → every added GPU must earn a *proportional* score gain, which sub-linear scaling (§8.1) ultimately prevents.
+
+Each experiment in §5 is a controlled test of exactly one of these terms.
+
+
+## 5. Experiments
+
+### 5.1 Experiment 1 — Baseline (1×H100, 80 users, default config)
 
 The reference point: the unoptimized starter configuration — eager execution, prefix cache on, chunked prefill on, `max_num_batched_tokens = 4096` — at a comfortable 80 users on a single GPU, driven from a laptop client.
 
@@ -150,7 +295,7 @@ python run_infertutor_experiment.py \
 !!! note "Reading the baseline"
     Two numbers stand out as the obvious targets. ITL is **38.8 ms** — far higher than the model's compute floor, because eager mode pays kernel-launch overhead on every decode step. TTFT is nearly **5 seconds** — the score divides by this, so it alone caps the baseline near 0.3M. The rest of the project is an attack on these two terms.
 
-### 4.2 Experiment 2 — Compiled mode (CUDA graphs): the breakthrough, against the spec's warning
+### 5.2 Experiment 2 — Compiled mode (CUDA graphs): the breakthrough, against the spec's warning
 
 The capstone's own dry-run notes caution that compiled mode "performed poorly on mixed multimodal traffic." I treated that as a hypothesis to test, not a rule to obey. Compiled mode (`--no-fast-boot`) makes vLLM capture the decode loop as a replayable CUDA graph at startup, eliminating per-step kernel launches.
 
@@ -170,9 +315,9 @@ python run_infertutor_experiment.py \
     In eager mode each decode step issues individual CUDA kernels (attention, MLP, normalization, sampling); the driver schedules each separately, ~10–15 µs apiece, ~5–10 kernels per step. With hundreds of concurrent users each generating 96 tokens, that overhead compounds across tens of thousands of decode steps per second. CUDA-graph replay issues one "replay" command and the GPU runs the pre-captured sequence with zero CPU-side scheduling. The 38.8 → 5.7 ms drop *is* that overhead being eliminated.
 
 !!! warning "Why this contradicts the dry-run note"
-    The eager-mode submissions read "performed poorly on mixed" as "don't use compiled mode for mixed." Measured here, compiled mode is **strictly better** on mixed: the 75% text/long share gets graph-replayed decode, while image requests fall back gracefully on the vision path. The dry-run's "poorly" was about *latency behavior during warmup*, not output correctness — which §6 confirms with a direct quality probe. Cold replicas are warmed with a short client pass before measurement so the ramp isn't served in eager mode.
+    The eager-mode submissions read "performed poorly on mixed" as "don't use compiled mode for mixed." Measured here, compiled mode is **strictly better** on mixed: the 75% text/long share gets graph-replayed decode, while image requests fall back gracefully on the vision path. The dry-run's "poorly" was about *latency behavior during warmup*, not output correctness — which §5.9 confirms with a direct quality probe. Cold replicas are warmed with a short client pass before measurement so the ramp isn't served in eager mode.
 
-### 4.3 Experiment 3 — Co-locating the load client inside Modal
+### 5.3 Experiment 3 — Co-locating the load client inside Modal
 
 Early runs were pinned at TTFT p95 ≈ 3 s no matter how healthy the server looked. Hypothesis: the bottleneck was not the server but the **path to it** — a residential uplink buffering under high SSE volume, so first-token packets queued behind bulk traffic.
 
@@ -190,7 +335,7 @@ modal run load_client_modal.py \
 !!! finding "The foundational fix: measure the server, not the laptop"
     Because the score divides by p95 TTFT, a 3× inflated TTFT caps the score regardless of how fast the GPU is. The laptop's upstream link was bufferbloating under hundreds of concurrent streaming responses; the first-token packet for a new request waited behind megabytes of in-flight tokens for other requests. Removing the laptop from the path is the difference between a client-bottlenecked ~0.3M-class measurement and a real 150M-class server. `load_client_modal.py` was extended to emit the full mixed workload (the same deterministic diagram PNG, 25/20/55 image/long/text).
 
-### 4.4 Experiment 4 — Batch-token budget 4096 → 16384
+### 5.4 Experiment 4 — Batch-token budget 4096 → 16384
 
 With the client bottleneck gone, decode slots were sometimes idle because requests weren't being admitted to prefill fast enough. `max_num_batched_tokens` bounds how many tokens the scheduler can prefill per step.
 
@@ -200,7 +345,7 @@ With the client bottleneck gone, decode slots were sometimes idle because reques
 !!! finding "Unblocking prefill admission"
     At 4096, a single image request's vision-encoder prefill (≈1,000–5,000 tokens) consumes most of the per-step token budget, so text requests wait several scheduler steps just to be admitted. Raising the budget to 16384 lets the scheduler admit a mixed batch — image prefill chunks *and* several text prefills *and* ongoing decode — in the same step, so decode never starves. Past 16384, the prefill share grows large enough to delay decode for already-running sequences, raising ITL. This was the decisive *server-side* knob once bufferbloat was removed.
 
-### 4.5 Experiment 5 — Scale-out to 4 replicas and the user sweep
+### 5.5 Experiment 5 — Scale-out to 4 replicas and the user sweep
 
 With the levers in place (compiled, b16384, co-located client, prefix off, chunked on), I scaled to the 4-GPU budget and swept user count to find where the composite peaks. Replicas — not tensor parallelism — are the scaling unit for a 4B model that fits on one GPU.
 
@@ -211,6 +356,14 @@ With the levers in place (compiled, b16384, co-located client, prefix off, chunk
 | 340 | 1260 ms | 5.8 ms | 12,301 | 0.0 | 142,810,000 |
 | 400 | 3581 ms | 6.1 ms | 7,923 | 6.4 | 33,950,000 |
 
+<div class="figure" markdown="1">
+
+![User knee](figures/user_knee.png)
+
+*Figure 5. The user knee on 4×H100. Score (blue) peaks at 300 users; TTFT p95 (amber) stays near 1 s through the knee, then explodes 3.5× to 3.6 s by 400 users as the prefill queue saturates (Little's law, §4.5) — dragging the composite down even though more users are offered.*
+
+</div>
+
 !!! result "User knee (4×H100, mixed)"
     The composite peaks at **300 users = 149,776,620** with **0 errors**. Below it (240u) leaves throughput on the table; above it TTFT climbs faster than throughput until the prefill queue saturates and errors appear (400u).
 
@@ -220,7 +373,7 @@ With the levers in place (compiled, b16384, co-located client, prefix off, chunk
 !!! reference "vs the spec's mixed reference"
     The instructor's reference mixed run (eager, 4r, 120u) reports ~897.6 ms TTFT, 38.1 ms ITL, 2,756 chunks/s. The headline config delivers **5.7 ms ITL (≈6.7× better)** and **11,649 chunks/s (≈4.2× higher)** at 2.5× the users — the ITL win is what the composite rewards most.
 
-### 4.6 Experiment 6 — Prefix caching ON (negative ablation)
+### 5.6 Experiment 6 — Prefix caching ON (negative ablation)
 
 The intuitive optimization: all requests share a ~40-token system prompt, so caching its KV blocks *should* save prefill work and lower TTFT. I tested the opposite hypothesis by flipping prefix caching back on at the otherwise-winning 300-user config.
 
@@ -238,7 +391,7 @@ modal run load_client_modal.py --url <endpoint> \
 !!! finding "Overhead exceeds savings at short prefixes — and disrupts CUDA graphs"
     At a 40-token system prompt the KV savings from a cache hit are negligible (skip prefill for ~40 tokens). But the caching machinery costs per request: content-hash each KV block, look it up in the cache index, reference-count for eviction, acquire/release locks. Overhead > savings. Worse, in **compiled mode** prefix caching makes per-request KV-block allocation vary (some blocks reused, some fresh), breaking the CUDA graph's assumption of uniform memory-access patterns and forcing partial re-capture — which is why the TTFT damage here (≈3×) is larger than the eager-mode version of this effect. The textbook "obvious optimization that makes things 4× worse," caught only by measuring.
 
-### 4.7 Experiment 7 — Chunked prefill OFF (negative ablation)
+### 5.7 Experiment 7 — Chunked prefill OFF (negative ablation)
 
 To quantify chunked prefill's value for image-heavy traffic, I disabled it at the headline config. Without it, vLLM runs each prefill to completion before any decode step.
 
@@ -256,7 +409,7 @@ modal run load_client_modal.py --url <endpoint> \
 !!! finding "Chunked prefill protects mixed-mode TTFT"
     With 25% image traffic, one in four requests carries a large vision-encoder prefill. Without chunking, that prefill runs as a single scheduler step and *every request queued behind it* — including short text requests — waits the full prefill duration before getting its first token. Chunked prefill splits the long prefill into token-budget chunks and interleaves decode steps between them, so text requests stream within milliseconds. Turning it off re-introduces head-of-line blocking; the latency tail inflates and the system tips into errors.
 
-### 4.8 Experiment 8 — Boss Fight (8×H100) and the error cliff
+### 5.8 Experiment 8 — Boss Fight (8×H100) and the error cliff
 
 The optional boss fight allows 8 H100s. Hypothesis: with 8 replicas the per-GPU load halves, so the same per-replica operating point supports ~2× the users. The catch is the ÷8 in the denominator — the tier only wins if errors stay near zero. I swept user count to find the cliff.
 
@@ -277,6 +430,14 @@ modal run load_client_modal.py --url <endpoint> \
 | 500 | 1047 ms | 6.6 ms | 17,089 | 3.3 | 149,740,000 |
 | 600 | 1207 ms | 6.7 ms | 16,937 | 8.7 | 143,580,000 |
 
+<div class="figure" markdown="1">
+
+![Error cliff](figures/error_cliff.png)
+
+*Figure 6. The 8×H100 error cliff. Score (bars) is highest at 460 users where errors are 0.5%; from 460→500 users aggregate throughput barely moves but error rate (red) crosses ~3%, and the `(1 − err)` factor plus inflated TTFT collapse the score back to the 4-GPU level. The boss tier is a knife-edge, not a slope.*
+
+</div>
+
 !!! result "Boss fight"
     Best 8-GPU run = **189,183,025** at 460 users (0.5% errors, TTFT 803 ms, 17,425 chunks/s). Pushing to 500 users (3.3% errors) collapses the score back to the 4-GPU level despite *higher* aggregate throughput.
 
@@ -284,9 +445,9 @@ modal run load_client_modal.py --url <endpoint> \
     The most surprising result of the project. From 460 → 500 users, throughput barely moves (17.4k → 17.1k c/s) but errors go 0.5% → 3.3% and TTFT 803 → 1,047 ms. Both the `(1 − error_rate)` goodput factor and the inflated p95 TTFT move *against* the score, and the ÷8 GPU divisor gives no slack to absorb it. The boss tier is a knife-edge: it only beats the 4-GPU headline (189M vs 150M) while errors stay under ~1%.
 
 !!! note "Why 8 GPUs is only 1.5×, not 2×"
-    Aggregate throughput is ~17.4k c/s on 8 GPUs vs ~11.6k on 4 — **1.5× for double the hardware**. That sub-linear scaling is the single-endpoint ceiling examined in §7.
+    Aggregate throughput is ~17.4k c/s on 8 GPUs vs ~11.6k on 4 — **1.5× for double the hardware**. That sub-linear scaling is the single-endpoint ceiling examined in §8.
 
-### 4.9 Experiment 9 — Quality probe: is compiled-on-mixed actually safe?
+### 5.9 Experiment 9 — Quality probe: is compiled-on-mixed actually safe?
 
 Because the official score multiplies by `quality_pass_rate` and my headline keeps compiled mode on for mixed (the lever the spec warns about), I measured answer quality directly instead of assuming it. `probe_quality.py` sends the **official** prompts (all 4 image prompts with the harness's 256×192 PNG, both long prompts, 4 text prompts) **non-streaming** to two 1×H100 endpoints that differ *only* in execution mode, captures the full answers, and flags any empty / truncated / repetitive / mojibake output.
 
@@ -308,9 +469,9 @@ python probe_quality.py --url <eager-endpoint>    --label eager-mixed    --mode 
     The model genuinely reads the diagram under both modes (it returns "decode-heavy vs prefill-heavy," "replicas vs tensor-parallelism," concrete knob suggestions). Compiled mode does not degrade `quality_pass_rate` — so the headline carries no quality penalty, and the score it earns is real. Raw outputs: `quality_compiled-mixed_*.json`, `quality_eager-mixed_*.json`.
 
 
-## 5. Complete Results Summary
+## 6. Complete Results Summary
 
-### 5.1 Full experiment table (Track 1 — mixed)
+### 6.1 Full experiment table (Track 1 — mixed)
 
 | # | Label | GPUs | Users | Prefix | Chunked | TTFT | ITL | chunks/s | Err% | Score |
 |---:|---|---:|---:|---|---|---:|---:|---:|---:|---:|
@@ -328,22 +489,20 @@ python probe_quality.py --url <eager-endpoint>    --label eager-mixed    --mode 
 
 *TTFT and ITL are p95 in milliseconds. Throughput is aggregate stream chunks/s. Bold rows are the submitted results. Spec reference baselines for orientation: eager/4r/120u = 897.6 ms / 38.1 ms / 2,756 c/s; eager/2r/100u = 1,168.9 ms / 28.7 ms / 2,243 c/s.*
 
-### 5.2 Score progression
+### 6.2 Score progression
 
-```
-   319,183  ── baseline (1×H100, eager, prefix-on, b4096, 80u)
-              │  + compiled mode (ITL 38.8→5.7)
-              │  + co-located Modal client (TTFT ~3s→~1s)
-              │  + max_num_batched_tokens 4096→16384
-              │  + scale to 4×H100, tune user knee to 300u
- 149,776,620  ◀ official (4×H100, 300u, 0 errors)   ← within budget
-              │  + scale to 8×H100, hold the error cliff at 460u
- 189,183,025  ◀ boss fight (8×H100, 460u, 0.5% errors)
-```
-*Figure 2. Score progression from the unoptimized baseline (319K) to the in-budget headline (150M) and the optional boss fight (189M) — a ~469× lift end-to-end, ~54× over the spec's mixed reference at the in-budget result.*
+<div class="figure" markdown="1">
+
+![Score progression](figures/score_progression.png)
+
+*Figure 7. Score progression (log scale) from the unoptimized baseline (319K) to the in-budget headline (150M) and the optional boss fight (189M) — a ~469× lift end-to-end, ~54× over the spec's mixed reference at the in-budget result.*
+
+</div>
+
+The stacked levers that produce this progression: baseline (1×H100, eager, prefix-on, b4096, 80u) → **+ compiled mode** (ITL 38.8→5.7) → **+ co-located Modal client** (TTFT ~3s→~1s) → **+ `max_num_batched_tokens` 4096→16384** → **+ scale to 4×H100, tune the user knee to 300u** = **149,776,620** (official, within budget) → **+ scale to 8×H100, hold the error cliff at 460u** = **189,183,025** (boss fight).
 
 
-## 6. Key Findings and Lessons Learned
+## 7. Key Findings and Lessons Learned
 
 1. **CUDA-graph compilation is the decisive lever (ITL 38.8 → 5.7 ms),** and it works on mixed traffic — directly contradicting the dry-run's caution. The biggest win came from testing the warning instead of obeying it.
 2. **The path matters as much as the server.** Co-locating the load client (TTFT ~3 s → ~1 s) was the difference between a client-bottlenecked measurement and a real one. Always confirm you're measuring the system, not the network to it.
@@ -356,28 +515,28 @@ python probe_quality.py --url <eager-endpoint>    --label eager-mixed    --mode 
     Intuition about system optimizations is wrong without measurement. Prefix caching was "obviously" helpful and hurt. Compiled mode was "known" to be bad for mixed and was the biggest win. Every optimization had to be validated against the *full* scoring function, not just the metric it was meant to improve.
 
 
-## 7. Unaddressed Bottlenecks and Future Work
+## 8. Unaddressed Bottlenecks and Future Work
 
-### 7.1 The single-endpoint throughput ceiling (the residual bottleneck)
+### 8.1 The single-endpoint throughput ceiling (the residual bottleneck)
 
 Both 8- and 4-replica runs plateau in aggregate throughput — ~17.4k c/s on 8 GPUs vs ~11.6k on 4, i.e. **1.5× for double the GPUs**. That sub-linear scaling points to a single Modal web-endpoint proxy as the shared chokepoint: all concurrency piles onto one proxy, deepening the prefill queue and coupling throughput to TTFT. Within that topology every knob is already at its measured optimum. Going further is **architectural** — multiple independent load-balanced endpoints so throughput scales without piling concurrency onto one proxy.
 
-### 7.2 A quality-gated submission
+### 8.2 A quality-gated submission
 
-The official score multiplies by `quality_pass_rate`, which the local harness assumes = 1.0. §6's probe supports that empirically; a full gated run with a scored rubric over the official prompts would close the last gap.
+The official score multiplies by `quality_pass_rate`, which the local harness assumes = 1.0. §5.9's probe supports that empirically; a full gated run with a scored rubric over the official prompts would close the last gap.
 
-### 7.3 Speculative decoding
+### 8.3 Speculative decoding
 
 For a 4B model, a ~0.5B draft model (e.g. Qwen3-0.6B) could give 2–3× decode speedup, lowering ITL further — directly on the denominator.
 
-### 7.4 Request-type-aware routing
+### 8.4 Request-type-aware routing
 
 Separating short text from long/image traffic onto different replica pools would let each pool tune `max_num_seqs` and batch budget independently, reducing head-of-line blocking and pushing the mixed user ceiling past 300.
 
 
-## 8. Final Configurations
+## 9. Final Configurations
 
-### 8.1 Track 1 — Multimodal (official, within budget)
+### 9.1 Track 1 — Multimodal (official, within budget)
 
 ```bash
 set PYTHONUTF8=1
@@ -402,7 +561,7 @@ python score_infertutor.py results_infertutor/mix-4r-300u_mixed_300u_<ts>.json
 
 **Why this configuration wins:** (1) `--no-fast-boot` enables compiled mode → ITL 38.8 → 5.7 ms; (2) `--no-prefix-cache` removes per-request overhead and keeps CUDA graphs clean; (3) chunked prefill on protects TTFT against 25% image traffic; (4) `max-batch-tokens 16384` unblocks prefill admission; (5) 300 users (~75/GPU) sits exactly on the throughput knee with 0 errors; (6) the co-located client ensures the measurement reflects the server, not the laptop.
 
-### 8.2 Boss Fight (optional, 8×H100)
+### 9.2 Boss Fight (optional, 8×H100)
 
 Identical flags with `--replicas 8`, then `modal run … --users 460 --shards 20 --ramp-up 90 --total-gpus 8`.
 
@@ -414,28 +573,28 @@ Identical flags with `--replicas 8`, then `modal run … --users 460 --shards 20
     All `infertutor-*` and `arena-loadgen` apps are stopped after each run (`modal app stop … --yes`); `modal app list` shows 0 running. Nothing is billing.
 
 
-## 9. vLLM Architecture Deep Dive
+## 10. vLLM Architecture Deep Dive
 
 This section explains the core vLLM mechanisms that directly drove the results.
 
-### 9.1 PagedAttention
+### 10.1 PagedAttention
 
 Traditional attention needs a contiguous KV-cache block per sequence, causing internal fragmentation (reserved-but-unused memory) and external fragmentation (no contiguous block large enough despite free total memory). PagedAttention manages the KV cache in fixed-size, non-contiguous **pages** (like OS virtual memory), looked up via a block table. This gives higher batch occupancy and is the foundation for prefix sharing — and it's what lets `max_num_seqs = 32` coexist with long prompts on one H100.
 
-### 9.2 Continuous batching
+### 10.2 Continuous batching
 
 Static batching waits to fill a fixed-size batch, then processes it until all sequences finish — the GPU idles waiting on the slowest sequence. Continuous batching inserts new requests into the running batch at any decode step and reuses a slot the instant a sequence completes, keeping the GPU near 100% utilized. `max_num_seqs` and `max_num_batched_tokens` bound how aggressively it does this.
 
-### 9.3 Chunked prefill
+### 10.3 Chunked prefill
 
 vLLM's scheduler can run all prefills before any decode step — optimal for uniform workloads but disastrous for mixed traffic, where a 1,000–5,000-token image prefill blocks every queued text request (Experiment 7). Chunked prefill caps the tokens processed per step (`max-batch-tokens`); long prefills are split into chunks and the scheduler interleaves decode steps between them, so short requests stream without waiting for the whole image prefill.
 
-### 9.4 CUDA-graph compilation (compiled mode)
+### 10.4 CUDA-graph compilation (compiled mode)
 
 PyTorch eager execution issues CUDA kernels one at a time: CPU serializes each call, enqueues it, the driver schedules it, the GPU runs it. CUDA graphs capture all kernels for a decode step once during warmup; serving then issues a single "replay graph" command and the GPU runs the whole sequence without CPU-side scheduling. The constraint is that the graph is captured for specific tensor shapes — predictable decode batches replay cleanly (Experiment 2), but variable-length vision-encoder outputs fall back to eager, which is why the warning existed. Measured here, the text/long majority still gets the full benefit and image quality is unaffected (Experiment 9).
 
 
-## 10. Conclusion
+## 11. Conclusion
 
 This capstone demonstrates the full lifecycle of a production inference-engineering problem: infrastructure setup, systematic single-variable experimentation, and a final configuration that beats the reference baseline on every measured metric while staying within budget.
 
