@@ -681,6 +681,16 @@ The mapping is nearly one-to-one — read it row by row:
 
 The three levers that carried this report are not LLM tricks — they are edge-inference fundamentals, and each transfers directly to a ground station ingesting an L-band SAR downlink: **compiled CUDA graphs** for steady-state latency, **co-locating the client with the server** so you measure what actually matters instead of your own uplink, and **widening the admission window** so the expensive stage never starves.
 
+Aperture runs that same inference layer on **NVIDIA ARC-Pro edge computing**, turning the sensor downlink into real-time insight for three verticals. The figure below traces the whole path — from the levers measured here, through the energy budget that makes edge compute viable, to where the insight lands for Agriculture, Logistics, and Energy.
+
+<div class="figure" markdown="1">
+
+![From measured inference levers to real-time insight on NVIDIA ARC-Pro edge computing](figures/edge_inference_explainer.png)
+
+*Figure 10 — The same latency-and-cost discipline, applied at the edge. Top: the sensor → ARC-Pro → insight pipeline, annotated with this study's measured numbers. Middle: the three levers, each also an energy win — less accelerator time per token is fewer joules and less heat, the binding constraint for solar-powered, radiatively-cooled edge hardware. Bottom: where the insight lands — Yield Forecaster, Supply Chain Sentinel, and Asset Integrity — each viable only because latency drops to milliseconds and cost to a few dollars per scene.*
+
+</div>
+
 If this report demonstrates one transferable thing, it is the working method: *don't tune blind.* State the objective as a single number, instrument everything, find the bottleneck the math — not the intuition — points to, move it, and re-measure. That loop turned a 0.3M baseline into a 150M production result here. It is the same loop Aperture runs against real orbital data next.
 
 ---
