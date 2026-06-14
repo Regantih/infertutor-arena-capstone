@@ -47,6 +47,8 @@
 
 ## 1. Introduction
 
+<p class="epigraph">“The more you buy, the more you save.”<span class="cite">— Jensen Huang, NVIDIA CEO</span></p>
+
 ### 1.1 Project overview
 
 InferTutor Arena is a capstone in production LLM serving. The challenge: design, deploy, and optimize a production-grade multimodal serving system that handles high-concurrency traffic, then demonstrate engineering prowess by systematically improving every measurable production metric.
@@ -79,6 +81,8 @@ InferTutor is framed as an AI tutoring service built on a multimodal LLM. Studen
 
 
 ## 2. System Architecture
+
+<p class="epigraph">“All problems in computer science can be solved by another level of indirection — except the problem of too many levels of indirection.”<span class="cite">— David Wheeler</span></p>
 
 ### 2.1 Infrastructure stack
 
@@ -140,6 +144,8 @@ Key fixed server settings throughout: `max_model_len = 8192`, `mm_max_pixels = 4
 
 ## 3. Methodology
 
+<p class="epigraph">“Measure. Don’t tune for speed until you’ve measured.”<span class="cite">— Rob Pike, Go / Unix</span></p>
+
 Every result below is the output of a strict **Hypothesis → Variable → Result → Keep/Reject** loop: form a hypothesis from a latency metric, change **exactly one** server or load knob, re-run the fixed workload, read the composite, and keep or reject the change. p95 (not mean) is the unit of measurement, because the score divides by p95 and p95 is what users feel under load.
 
 The discipline matters because intuition was wrong about half the time here — prefix caching *should* have helped and made things 4× worse; the spec *said* compiled mode hurts mixed traffic and it turned out to be the single biggest win. The only reliable signal is the full scoring function, measured.
@@ -149,6 +155,8 @@ The discipline matters because intuition was wrong about half the time here — 
 
 
 ## 4. The Mathematics of Inference Serving
+
+<p class="epigraph">“A supercomputer is a device for turning compute-bound problems into I/O-bound problems.”<span class="cite">— Seymour Cray</span></p>
 
 Before the experiments, it is worth deriving *why* the winning knobs work from first principles. Every result in §5 is an instance of two hardware facts: the two phases of autoregressive generation sit on **opposite sides of the GPU's roofline**, and the composite score is a product of terms each of which the hardware bounds independently. Getting the theory right is what turned "try flags and hope" into a directed search.
 
@@ -193,6 +201,8 @@ Decode at batch 1 has AI ≈ 1 (read the whole weight, do ~one multiply-add per 
 
 *Figure 2. The H100 roofline. Decode at batch 1 (AI≈1) is far down the memory-bound slope — its speed is set by HBM bandwidth, not FLOPs. Prefill (AI≈1000) is past the ridge in the compute-bound flat. Batching decode walks the operating point right along the slope (§4.3).*
 
+<p class="fignote">Illustrative — H100 SXM datasheet model, not measured (analytical, not a benchmark run).</p>
+
 </div>
 
 !!! note "Why this matters for the knobs"
@@ -216,6 +226,8 @@ This is the entire reason continuous batching and a generous `max_num_seqs` rais
 
 *Figure 3. Arithmetic intensity per phase. Decode at batch 1 (AI≈1) and even batch 32 (AI≈32) sit below the ridge (AI\*≈295) — bandwidth-bound, so batching is almost free throughput. Prefill (AI≈1000) is already compute-bound, so it must be **scheduled** (chunked) rather than sped up.*
 
+<p class="fignote">Illustrative — H100 SXM datasheet model, not measured (analytical, not a benchmark run).</p>
+
 </div>
 
 ### 4.4 The ITL floor, and what CUDA graphs actually remove
@@ -235,6 +247,8 @@ The eager-mode baseline measured **38.8 ms** — **16× above this floor**. That
 ![Compiled vs eager ITL](figures/itl_modes.png)
 
 *Figure 4. The eager 38.8 ms ITL is dominated by kernel-launch overhead, not compute. Compiled mode (CUDA graphs) replays the captured decode step and lands at 5.7 ms — approaching the ~2.4 ms memory-bandwidth floor. The ≈33 ms removed is pure scheduling overhead (Experiment 2).*
+
+<p class="fignote">Bars are measured p95 ITL; the 2.4 ms floor is derived from the H100 datasheet, not measured.</p>
 
 </div>
 
@@ -276,6 +290,8 @@ Each experiment in §5 is a controlled test of exactly one of these terms.
 
 
 ## 5. Experiments
+
+<p class="epigraph">“The most dangerous phrase in the language is, ‘we’ve always done it this way.’”<span class="cite">— Grace Hopper</span></p>
 
 ### 5.1 Experiment 1 — Baseline (1×H100, 80 users, default config)
 
@@ -471,6 +487,8 @@ python probe_quality.py --url <eager-endpoint>    --label eager-mixed    --mode 
 
 ## 6. Complete Results Summary
 
+<p class="epigraph">“In God we trust; all others must bring data.”<span class="cite">— W. Edwards Deming</span></p>
+
 ### 6.1 Full experiment table (Track 1 — mixed)
 
 | # | Label | GPUs | Users | Prefix | Chunked | TTFT | ITL | chunks/s | Err% | Score |
@@ -504,6 +522,8 @@ The stacked levers that produce this progression: baseline (1×H100, eager, pref
 
 ## 7. Key Findings and Lessons Learned
 
+<p class="epigraph">“There are only two hard things in computer science: cache invalidation and naming things.”<span class="cite">— Phil Karlton</span></p>
+
 1. **CUDA-graph compilation is the decisive lever (ITL 38.8 → 5.7 ms),** and it works on mixed traffic — directly contradicting the dry-run's caution. The biggest win came from testing the warning instead of obeying it.
 2. **The path matters as much as the server.** Co-locating the load client (TTFT ~3 s → ~1 s) was the difference between a client-bottlenecked measurement and a real one. Always confirm you're measuring the system, not the network to it.
 3. **Prefix caching is a net loss at short prefixes** (149.8M → 33.7M). Overhead (hashing, lookup, locking, CUDA-graph disruption) exceeds the savings of skipping a 40-token prefill.
@@ -516,6 +536,8 @@ The stacked levers that produce this progression: baseline (1×H100, eager, pref
 
 
 ## 8. Unaddressed Bottlenecks and Future Work
+
+<p class="epigraph">“A distributed system is one in which the failure of a computer you didn’t even know existed can render your own computer unusable.”<span class="cite">— Leslie Lamport</span></p>
 
 ### 8.1 The single-endpoint throughput ceiling (the residual bottleneck)
 
@@ -535,6 +557,8 @@ Separating short text from long/image traffic onto different replica pools would
 
 
 ## 9. Final Configurations
+
+<p class="epigraph">“You build it, you run it.”<span class="cite">— Werner Vogels, Amazon CTO</span></p>
 
 ### 9.1 Track 1 — Multimodal (official, within budget)
 
@@ -575,6 +599,8 @@ Identical flags with `--replicas 8`, then `modal run … --users 460 --shards 20
 
 ## 10. vLLM Architecture Deep Dive
 
+<p class="epigraph">“Simplicity is a prerequisite for reliability.”<span class="cite">— Edsger W. Dijkstra</span></p>
+
 This section explains the core vLLM mechanisms that directly drove the results.
 
 ### 10.1 PagedAttention
@@ -596,6 +622,8 @@ PyTorch eager execution issues CUDA kernels one at a time: CPU serializes each c
 
 ## 11. Conclusion
 
+<p class="epigraph">“Premature optimization is the root of all evil.”<span class="cite">— Donald Knuth</span></p>
+
 This capstone demonstrates the full lifecycle of a production inference-engineering problem: infrastructure setup, systematic single-variable experimentation, and a final configuration that beats the reference baseline on every measured metric while staying within budget.
 
 | Result | Score | Headline metrics |
@@ -611,6 +639,8 @@ The optimized, in-budget pipeline is **~469×** the unoptimized 1-GPU baseline a
 *InferTutor Arena — Capstone Complete · Inference Engineering Capstone · June 2026 · Hemanth Reganti*
 
 ## Appendix A — Reproducibility
+
+<p class="epigraph">“Any fool can write code that a computer can understand. Good programmers write code that humans can understand.”<span class="cite">— Martin Fowler</span></p>
 
 - **Repo:** https://github.com/Regantih/infertutor-arena-capstone (`/submission` holds all deliverables).
 - **Final JSON:** `mix-4r-300u_mixed_300u_1781402073.json` (official); `mix-8r-460u_mixed_460u_1781404394.json` (boss fight).
