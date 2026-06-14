@@ -1,39 +1,38 @@
 <div class="titlepage" markdown="1">
 
-<div class="kicker">Inference Engineering Capstone · 2026</div>
+<div class="kicker">From Tokens to Telemetry · Engineering Notes · 2026</div>
 
-# InferTutor Arena
+# Engineering Inference for the Edge
 
-### Production Multimodal LLM Serving on Modal with vLLM
+### A latency-and-cost study in multimodal LLM serving — groundwork for Aperture
 
 <div class="byline">
-<div class="by-label">Submitted by</div>
 <div class="by-name">Hemanth Reganti</div>
-<div class="by-sub">Qwen/Qwen3-VL-4B-Instruct · vLLM 0.21.0 · Modal (NVIDIA H100) · June 2026</div>
+<div class="by-sub">Qwen/Qwen3-VL-4B-Instruct · vLLM 0.21.0 · Modal (NVIDIA H100) · June 2026 · marketlogic.org</div>
 </div>
 
 <div class="resultcards">
 <div class="rcard primary">
-<div class="rc-tag">Track 1 — Multimodal · Official</div>
+<div class="rc-tag">Multimodal serving · 4×H100</div>
 <div class="rc-score">149,776,620</div>
-<div class="rc-meta">within the 4×H100 budget</div>
+<div class="rc-meta">efficiency score, within a 4-GPU budget</div>
 <div class="rc-sub">TTFT 1029 ms · ITL 5.7 ms · 11,649 c/s · 0% err</div>
 </div>
 <div class="rcard">
-<div class="rc-tag">Optional Boss Fight</div>
+<div class="rc-tag">Scaled tier · 8×H100</div>
 <div class="rc-score">189,183,025</div>
-<div class="rc-meta">8×H100 tier</div>
+<div class="rc-meta">same recipe, twice the GPUs</div>
 <div class="rc-sub">TTFT 803 ms · ITL 6.6 ms · 17,425 c/s</div>
 </div>
 <div class="rcard">
 <div class="rc-tag">Lift over baseline</div>
 <div class="rc-score">~469×</div>
 <div class="rc-meta">from 319,183 (1×H100, unoptimized)</div>
-<div class="rc-sub">~54× over the spec's mixed reference</div>
+<div class="rc-sub">~54× over the public reference baseline</div>
 </div>
 </div>
 
-*"Deploy, load-test, measure, and optimize a real multimodal LLM serving pipeline under concurrent production traffic — then engineer it to beat the reference baseline on every metric."*
+*"On the edge, two numbers decide everything: how fast an answer arrives, and what it costs to produce. This is a study of how far both can be bent on a fixed GPU budget — and the methodology it hands to Aperture."*
 
 </div>
 
@@ -48,12 +47,12 @@
 ## At a Glance — How the System Was Optimized
 
 <div class="infographic">
-<div class="ig-head"><div class="ig-title">How InferTutor Arena Was Optimized</div><div class="ig-sub">Five ideas that turn a 0.3M baseline into a 150M in-budget production system — measured, not assumed</div></div>
+<div class="ig-head"><div class="ig-title">How the Inference Stack Was Optimized</div><div class="ig-sub">Five ideas that turn a 0.3M baseline into a 150M in-budget production system — measured, not assumed</div></div>
 <div class="ig-grid">
 <div class="ig-card blue"><div class="ig-num">1</div><div class="ig-ct">The Core Idea</div><ul><li>Every answer has two phases: <b>prefill</b> (read the whole prompt, make the first token) and <b>decode</b> (stream the rest, one token at a time).</li><li>Prefill is <b>compute-bound</b> &rarr; it sets <b>TTFT</b>. Decode is <b>memory-bound</b> &rarr; it sets <b>ITL</b>.</li><li>The score divides by both, so each phase needs its <b>own</b> knob — fixing one does not fix the other.</li></ul></div>
 <div class="ig-card green"><div class="ig-num">2</div><div class="ig-ct">What Changes — the three levers</div><ul><li><b>Compiled CUDA graphs:</b> ITL 38.8 &rarr; 5.7 ms (removes per-step kernel-launch overhead).</li><li><b>Co-located load client:</b> TTFT ~3 s &rarr; ~1 s (kills home-uplink bufferbloat — measure the server, not the laptop).</li><li><b>max_batch_tokens 4096 &rarr; 16384:</b> unblocks prefill admission so decode never starves.</li></ul></div>
 <div class="ig-card amber span2"><div class="ig-num">3</div><div class="ig-ct">The Core Tradeoff</div><ul><li><b>More users &harr; higher TTFT.</b> Throughput rises with load until the prefill queue saturates — the knee is <b>300 users on 4 GPUs</b> (0 errors).</li><li><b>More GPUs &harr; a bigger divisor.</b> The score divides by GPU count, so 8 GPUs must beat 4 by &gt;2× — but real scaling is only ~1.5×.</li><li><b>Errors are a cliff, not a slope.</b> Past ~1% error the (1−err) factor and the TTFT spike collapse the score (460u = 189M, 500u = 150M).</li></ul></div>
-<div class="ig-card purple"><div class="ig-num">4</div><div class="ig-ct">What You See in the Results</div><ul><li><b>Official (4×H100, 300u):</b> TTFT 1029 ms · ITL 5.7 ms · 11,649 c/s · 0 err &rarr; <b>149,776,620</b>.</li><li><b>Boss fight (8×H100, 460u):</b> 17,425 c/s &rarr; <b>189,183,025</b> — only while errors stay ~0.5%.</li><li><b>~469×</b> the unoptimized 1-GPU baseline; ~54× the spec's mixed reference.</li></ul></div>
+<div class="ig-card purple"><div class="ig-num">4</div><div class="ig-ct">What You See in the Results</div><ul><li><b>Headline (4×H100, 300u):</b> TTFT 1029 ms · ITL 5.7 ms · 11,649 c/s · 0 err &rarr; <b>149,776,620</b>.</li><li><b>Scaled tier (8×H100, 460u):</b> 17,425 c/s &rarr; <b>189,183,025</b> — only while errors stay ~0.5%.</li><li><b>~469×</b> the unoptimized 1-GPU baseline; ~54× the public reference baseline.</li></ul></div>
 <div class="ig-card teal"><div class="ig-num">5</div><div class="ig-ct">The Principle</div><ul><li>Intuition is unreliable — validate <b>every</b> knob against the full scoring function.</li><li>Prefix caching "should" have helped and hurt 4×; compiled mode was "warned against" and was the biggest win.</li><li>The point is not to flip flags — it is to make the <b>bottleneck</b> visible, then move it.</li></ul></div>
 </div>
 <div class="ig-foot">Don't tune blind: measure against the score &rarr; find the binding bottleneck &rarr; move it &rarr; re-measure &rarr; repeat.</div>
@@ -65,35 +64,41 @@
 
 <p class="epigraph">“The more you buy, the more you save.”<span class="cite">— Jensen Huang, NVIDIA CEO</span></p>
 
-### 1.1 Project overview
+### 1.1 Why this study exists
 
-InferTutor Arena is a capstone in production LLM serving. The challenge: design, deploy, and optimize a production-grade multimodal serving system that handles high-concurrency traffic, then demonstrate engineering prowess by systematically improving every measurable production metric.
+Edge inference is governed by two numbers: **how fast an answer arrives** and **what it costs to produce**. Everything else — model choice, hardware, batching, autoscaling — is in service of those two. I care about them because of what I am building next.
 
-This is a deployment-and-measurement assignment, not a notebook exercise. It uses real GPU compute (NVIDIA H100s on Modal's serverless platform), a real production inference engine (vLLM 0.21.0), and a real scoring formula that punishes inefficiency in every dimension at once.
+**Aperture** is the satellite-data platform I am developing at [marketlogic.org](https://marketlogic.org/aperture/): an *intelligent ground station* that turns raw imagery — optical, SAR, thermal, LIDAR — into predictive intelligence at the **edge**, in **milliseconds** rather than the industry-standard 24–48 hours, at roughly **$2–5 per scene** instead of the $50–100 a cloud pipeline costs. That product promise *is* latency and cost-per-unit. Before committing a pipeline to those numbers, I wanted to pressure-test the underlying methodology on a workload where I could measure every variable in the open and reproduce every result.
 
-!!! note "The core challenge"
-    Maximize the competition score by *jointly* optimizing Time-to-First-Token (TTFT), Inter-Token Latency (ITL), aggregate throughput, sustained user count, and error rate — all at the same time, while staying within a GPU budget. Every configuration decision is a trade-off between these metrics.
+So this report is a deliberately rigorous warm-up: take a real multimodal model, serve it under concurrent production traffic on real GPUs, and push latency and cost as far as a fixed hardware budget allows — measuring, not guessing, at every step.
 
-### 1.2 The product story
+!!! note "The two numbers, stated precisely"
+    The objective is to *jointly* optimize Time-to-First-Token (TTFT), Inter-Token Latency (ITL), aggregate throughput, sustained concurrency, and error rate — all at once, within a GPU budget. These are exactly the levers that decide whether an edge inference product is viable, and they trade off against one another constantly.
 
-InferTutor is framed as an AI tutoring service built on a multimodal LLM. Students submit questions — some short text queries, some long reading-comprehension passages, some with images (diagrams, equations, charts). The model streams responses. The operator cares about:
+### 1.2 The workload
 
-- **Time to First Token (TTFT):** how quickly the first word appears. Students abandon sessions past ~2 seconds.
-- **Inter-Token Latency (ITL):** how smoothly the response streams. Jerky output feels broken even if the total time is acceptable.
-- **Throughput:** how many students can be served simultaneously.
-- **Error rate:** dropped requests are students left without help.
-- **GPU cost:** every extra H100 costs money; an 8-GPU system has to earn its overhead.
+To make the measurement reproducible I ran against a public multimodal-serving benchmark, **InferTutor Arena** (Qwen3-VL-4B on Modal + vLLM), scored by a single formula that divides goodput by latency *and* by GPU count — so inefficiency in any one dimension is punished immediately. The benchmark's scenario is an AI tutoring service: students send a mix of short text queries, long reading-comprehension passages, and image questions (diagrams, equations, charts), and the model streams answers back. The metrics that matter mirror any latency-sensitive serving product:
 
-### 1.3 Competition tracks
+- **Time to First Token (TTFT):** how quickly the first token appears — users abandon past ~2 seconds.
+- **Inter-Token Latency (ITL):** how smoothly the rest streams — jerky output feels broken.
+- **Throughput:** how much concurrent traffic one budget can absorb.
+- **Error rate:** dropped requests are unserved users.
+- **GPU cost:** every extra accelerator has to earn its overhead.
 
-| Track | Mode | Max GPUs | Traffic mix |
+A multimodal text-plus-image workload is a deliberate choice: it is the closest public analog to Aperture's multi-sensor fusion, where heterogeneous inputs share one inference budget.
+
+### 1.3 Workload modes and hardware budget
+
+The benchmark exposes three workload shapes and two GPU budgets, which I use throughout as a controlled testbed:
+
+| Workload | Mode | GPU budget | Traffic mix |
 |---|---|---|---|
-| **Multimodal Product Track (Main)** | `--mode mixed` | 4×H100 | 55% text, 20% long, 25% image |
-| Text Speed Track | `--mode text` | 4×H100 | 100% text |
-| Boss Fight (Optional) | either | 8×H100 | any |
+| **Mixed multimodal (headline)** | `--mode mixed` | 4×H100 | 55% text, 20% long, 25% image |
+| Text-only (lever discovery) | `--mode text` | 4×H100 | 100% text |
+| Scaled tier | either | 8×H100 | any |
 
-!!! note "Primary track"
-    The Multimodal Product Track is the **primary** capstone track — a more realistic production scenario than pure-text serving. This report's headline result is the Track 1 mixed number; the text track was used only as R&D to discover the levers, and the 8-GPU boss fight is reported separately.
+!!! note "What's the headline, and what's scaffolding"
+    The **mixed multimodal** result on a 4-GPU budget is the headline — the realistic, cost-constrained case. The text-only mode was used only as cheap R&D to *discover* the levers; the 8-GPU tier shows how the same recipe scales. The cost of each of these is itemized transparently in Appendix B.
 
 
 ## 2. System Architecture
@@ -164,7 +169,7 @@ Key fixed server settings throughout: `max_model_len = 8192`, `mm_max_pixels = 4
 
 Every result below is the output of a strict **Hypothesis → Variable → Result → Keep/Reject** loop: form a hypothesis from a latency metric, change **exactly one** server or load knob, re-run the fixed workload, read the composite, and keep or reject the change. p95 (not mean) is the unit of measurement, because the score divides by p95 and p95 is what users feel under load.
 
-The discipline matters because intuition was wrong about half the time here — prefix caching *should* have helped and made things 4× worse; the spec *said* compiled mode hurts mixed traffic and it turned out to be the single biggest win. The only reliable signal is the full scoring function, measured.
+The discipline matters because intuition was wrong about half the time here — prefix caching *should* have helped and made things 4× worse; the reference notes *said* compiled mode hurts mixed traffic and it turned out to be the single biggest win. The only reliable signal is the full scoring function, measured.
 
 !!! tip "Reading the experiment write-ups"
     Each experiment below gives the motivating question, the exact runner command (a *Listing*), a **Result** box with the measured metrics, and a **Key Finding** box with the mechanism. Scores are full integers from the saved JSON. TTFT/ITL are p95 in milliseconds; throughput is aggregate stream chunks/s.
@@ -327,9 +332,9 @@ python run_infertutor_experiment.py \
 !!! note "Reading the baseline"
     Two numbers stand out as the obvious targets. ITL is **38.8 ms** — far higher than the model's compute floor, because eager mode pays kernel-launch overhead on every decode step. TTFT is nearly **5 seconds** — the score divides by this, so it alone caps the baseline near 0.3M. The rest of the project is an attack on these two terms.
 
-### 5.2 Experiment 2 — Compiled mode (CUDA graphs): the breakthrough, against the spec's warning
+### 5.2 Experiment 2 — Compiled mode (CUDA graphs): the breakthrough, against the reference warning
 
-The capstone's own dry-run notes caution that compiled mode "performed poorly on mixed multimodal traffic." I treated that as a hypothesis to test, not a rule to obey. Compiled mode (`--no-fast-boot`) makes vLLM capture the decode loop as a replayable CUDA graph at startup, eliminating per-step kernel launches.
+The benchmark's own dry-run notes caution that compiled mode "performed poorly on mixed multimodal traffic." I treated that as a hypothesis to test, not a rule to obey. Compiled mode (`--no-fast-boot`) makes vLLM capture the decode loop as a replayable CUDA graph at startup, eliminating per-step kernel launches.
 
 ```bash
 python run_infertutor_experiment.py \
@@ -402,7 +407,7 @@ With the levers in place (compiled, b16384, co-located client, prefix off, chunk
 !!! finding "Where p95 bends"
     The score balances the user-count numerator against the p95-latency denominator. Up to 300 users, adding load adds throughput faster than it adds TTFT. At 340 throughput still rises but TTFT rises faster, so the composite slips. By 400 the prefill queue saturates: TTFT jumps 3.5× to 3.6 s, *throughput actually falls* (7,923 c/s) as the GPUs thrash, and errors hit 6.4%. 300 users (~75/GPU) is the operating point where the balance maximizes within budget.
 
-!!! reference "vs the spec's mixed reference"
+!!! reference "vs the public reference baseline"
     The instructor's reference mixed run (eager, 4r, 120u) reports ~897.6 ms TTFT, 38.1 ms ITL, 2,756 chunks/s. The headline config delivers **5.7 ms ITL (≈6.7× better)** and **11,649 chunks/s (≈4.2× higher)** at 2.5× the users — the ITL win is what the composite rewards most.
 
 ### 5.6 Experiment 6 — Prefix caching ON (negative ablation)
@@ -441,9 +446,9 @@ modal run load_client_modal.py --url <endpoint> \
 !!! finding "Chunked prefill protects mixed-mode TTFT"
     With 25% image traffic, one in four requests carries a large vision-encoder prefill. Without chunking, that prefill runs as a single scheduler step and *every request queued behind it* — including short text requests — waits the full prefill duration before getting its first token. Chunked prefill splits the long prefill into token-budget chunks and interleaves decode steps between them, so text requests stream within milliseconds. Turning it off re-introduces head-of-line blocking; the latency tail inflates and the system tips into errors.
 
-### 5.8 Experiment 8 — Boss Fight (8×H100) and the error cliff
+### 5.8 Experiment 8 — Scaling to 8×H100 and the error cliff
 
-The optional boss fight allows 8 H100s. Hypothesis: with 8 replicas the per-GPU load halves, so the same per-replica operating point supports ~2× the users. The catch is the ÷8 in the denominator — the tier only wins if errors stay near zero. I swept user count to find the cliff.
+The scaled tier allows 8 H100s. Hypothesis: with 8 replicas the per-GPU load halves, so the same per-replica operating point supports ~2× the users. The catch is the ÷8 in the denominator — the tier only wins if errors stay near zero. I swept user count to find the cliff.
 
 ```bash
 python run_infertutor_experiment.py --label mix-8r --gpu-type H100 --replicas 8 \
@@ -470,7 +475,7 @@ modal run load_client_modal.py --url <endpoint> \
 
 </div>
 
-!!! result "Boss fight"
+!!! result "Scaled 8-GPU tier"
     Best 8-GPU run = **189,183,025** at 460 users (0.5% errors, TTFT 803 ms, 17,425 chunks/s). Pushing to 500 users (3.3% errors) collapses the score back to the 4-GPU level despite *higher* aggregate throughput.
 
 !!! finding "Staying in the near-zero-error regime beats chasing users"
@@ -481,7 +486,7 @@ modal run load_client_modal.py --url <endpoint> \
 
 ### 5.9 Experiment 9 — Quality probe: is compiled-on-mixed actually safe?
 
-Because the official score multiplies by `quality_pass_rate` and my headline keeps compiled mode on for mixed (the lever the spec warns about), I measured answer quality directly instead of assuming it. `probe_quality.py` sends the **official** prompts (all 4 image prompts with the harness's 256×192 PNG, both long prompts, 4 text prompts) **non-streaming** to two 1×H100 endpoints that differ *only* in execution mode, captures the full answers, and flags any empty / truncated / repetitive / mojibake output.
+Because the score multiplies by `quality_pass_rate` and my headline keeps compiled mode on for mixed (the lever the reference warns about), I measured answer quality directly instead of assuming it. `probe_quality.py` sends the **benchmark** prompts (all 4 image prompts with the harness's 256×192 PNG, both long prompts, 4 text prompts) **non-streaming** to two 1×H100 endpoints that differ *only* in execution mode, captures the full answers, and flags any empty / truncated / repetitive / mojibake output.
 
 ```bash
 python probe_quality.py --url <compiled-endpoint> --label compiled-mixed --mode mixed
@@ -505,18 +510,18 @@ python probe_quality.py --url <eager-endpoint>    --label eager-mixed    --mode 
 
 <p class="epigraph">“In God we trust; all others must bring data.”<span class="cite">— W. Edwards Deming</span></p>
 
-### 6.1 Full experiment table (Track 1 — mixed)
+### 6.1 Full experiment table (mixed multimodal)
 
 | # | Label | GPUs | Users | Prefix | Chunked | TTFT | ITL | chunks/s | Err% | Score |
 |---:|---|---:|---:|---|---|---:|---:|---:|---:|---:|
 | 1 | mix-1r-base-80u *(baseline)* | 1 | 80 | on | on | 4994 | 38.8 | 773 | 0.0 | 319,183 |
 | 2 | mix-4r-240u | 4 | 240 | off | on | 785 | 6.1 | 10,827 | 0.0 | 136,280,000 |
-| 3 | **mix-4r-300u (official)** | **4** | **300** | **off** | **on** | **1029** | **5.7** | **11,649** | **0.0** | **149,776,620** |
+| 3 | **mix-4r-300u (headline)** | **4** | **300** | **off** | **on** | **1029** | **5.7** | **11,649** | **0.0** | **149,776,620** |
 | 4 | mix-4r-340u | 4 | 340 | off | on | 1260 | 5.8 | 12,301 | 0.0 | 142,810,000 |
 | 5 | mix-4r-400u *(past knee)* | 4 | 400 | off | on | 3581 | 6.1 | 7,923 | 6.4 | 33,950,000 |
 | 6 | mix-4r-pc-300u *(prefix ON)* | 4 | 300 | **on** | on | 2990 | 7.0 | 9,437 | 0.3 | 33,719,000 |
 | 7 | mix-4r-ncp-300u *(chunked OFF)* | 4 | 300 | off | **off** | 1498 | 6.5 | 9,897 | 1.0 | 75,122,000 |
-| 8 | **mix-8r-460u (boss fight)** | **8** | **460** | off | on | **803** | 6.6 | **17,425** | 0.5 | **189,183,025** |
+| 8 | **mix-8r-460u (scaled tier)** | **8** | **460** | off | on | **803** | 6.6 | **17,425** | 0.5 | **189,183,025** |
 | 9 | mix-8r-480u | 8 | 480 | off | on | 841 | 6.2 | 16,732 | 2.9 | 186,770,000 |
 | 10 | mix-8r-500u *(error cliff)* | 8 | 500 | off | on | 1047 | 6.6 | 17,089 | 3.3 | 149,740,000 |
 | 11 | mix-8r-600u | 8 | 600 | off | on | 1207 | 6.7 | 16,937 | 8.7 | 143,580,000 |
@@ -529,11 +534,11 @@ python probe_quality.py --url <eager-endpoint>    --label eager-mixed    --mode 
 
 ![Score progression](figures/score_progression.png)
 
-*Figure 7. Score progression (log scale) from the unoptimized baseline (319K) to the in-budget headline (150M) and the optional boss fight (189M) — a ~469× lift end-to-end, ~54× over the spec's mixed reference at the in-budget result.*
+*Figure 7. Score progression (log scale) from the unoptimized baseline (319K) to the in-budget headline (150M) and the scaled 8-GPU tier (189M) — a ~469× lift end-to-end, ~54× over the public reference baseline at the in-budget result.*
 
 </div>
 
-The stacked levers that produce this progression: baseline (1×H100, eager, prefix-on, b4096, 80u) → **+ compiled mode** (ITL 38.8→5.7) → **+ co-located Modal client** (TTFT ~3s→~1s) → **+ `max_num_batched_tokens` 4096→16384** → **+ scale to 4×H100, tune the user knee to 300u** = **149,776,620** (official, within budget) → **+ scale to 8×H100, hold the error cliff at 460u** = **189,183,025** (boss fight).
+The stacked levers that produce this progression: baseline (1×H100, eager, prefix-on, b4096, 80u) → **+ compiled mode** (ITL 38.8→5.7) → **+ co-located Modal client** (TTFT ~3s→~1s) → **+ `max_num_batched_tokens` 4096→16384** → **+ scale to 4×H100, tune the user knee to 300u** = **149,776,620** (headline, within budget) → **+ scale to 8×H100, hold the error cliff at 460u** = **189,183,025** (scaled tier).
 
 
 ## 7. Key Findings and Lessons Learned
@@ -561,7 +566,7 @@ Both 8- and 4-replica runs plateau in aggregate throughput — ~17.4k c/s on 8 G
 
 ### 8.2 A quality-gated submission
 
-The official score multiplies by `quality_pass_rate`, which the local harness assumes = 1.0. §5.9's probe supports that empirically; a full gated run with a scored rubric over the official prompts would close the last gap.
+The scoring formula multiplies by `quality_pass_rate`, which the local harness assumes = 1.0. §5.9's probe supports that empirically; a full gated run with a scored rubric over the same prompts would close the last gap.
 
 ### 8.3 Speculative decoding
 
@@ -576,7 +581,7 @@ Separating short text from long/image traffic onto different replica pools would
 
 <p class="epigraph">“You build it, you run it.”<span class="cite">— Werner Vogels, Amazon CTO</span></p>
 
-### 9.1 Track 1 — Multimodal (official, within budget)
+### 9.1 Mixed multimodal (headline, within budget)
 
 ```bash
 set PYTHONUTF8=1
@@ -595,13 +600,13 @@ modal run load_client_modal.py \
 python score_infertutor.py results_infertutor/mix-4r-300u_mixed_300u_<ts>.json
 ```
 
-!!! result "Track 1 final"
+!!! result "Headline result"
     Score **149,776,620** · TTFT p95 1,029 ms · ITL p95 5.7 ms · throughput 11,649 chunks/s · error rate 0.0% · 4×H100.
     JSON: `mix-4r-300u_mixed_300u_1781402073.json`.
 
 **Why this configuration wins:** (1) `--no-fast-boot` enables compiled mode → ITL 38.8 → 5.7 ms; (2) `--no-prefix-cache` removes per-request overhead and keeps CUDA graphs clean; (3) chunked prefill on protects TTFT against 25% image traffic; (4) `max-batch-tokens 16384` unblocks prefill admission; (5) 300 users (~75/GPU) sits exactly on the throughput knee with 0 errors; (6) the co-located client ensures the measurement reflects the server, not the laptop.
 
-### 9.2 Boss Fight (optional, 8×H100)
+### 9.2 Scaled tier (8×H100)
 
 Identical flags with `--replicas 8`, then `modal run … --users 460 --shards 20 --ramp-up 90 --total-gpus 8`.
 
@@ -640,39 +645,39 @@ PyTorch eager execution issues CUDA kernels one at a time: CPU serializes each c
 
 <p class="epigraph">“Premature optimization is the root of all evil.”<span class="cite">— Donald Knuth</span></p>
 
-This capstone demonstrates the full lifecycle of a production inference-engineering problem: infrastructure setup, systematic single-variable experimentation, and a final configuration that beats the reference baseline on every measured metric while staying within budget.
+This study demonstrates the full lifecycle of a production inference-engineering problem: infrastructure setup, systematic single-variable experimentation, and a final configuration that beats the reference baseline on every measured metric while staying within budget.
 
 | Result | Score | Headline metrics |
 |---|---:|---|
-| **Track 1 — Multimodal (within 4×H100 budget)** | **149,776,620** | TTFT 1,029 ms · ITL 5.7 ms · 11,649 c/s · 0% err |
-| Boss Fight (8×H100) | 189,183,025 | TTFT 803 ms · ITL 6.6 ms · 17,425 c/s · 0.5% err |
+| **Mixed multimodal (within 4×H100 budget)** | **149,776,620** | TTFT 1,029 ms · ITL 5.7 ms · 11,649 c/s · 0% err |
+| Scaled tier (8×H100) | 189,183,025 | TTFT 803 ms · ITL 6.6 ms · 17,425 c/s · 0.5% err |
 | Baseline (1×H100, default) | 319,183 | TTFT 4,994 ms · ITL 38.8 ms · 773 c/s |
 
-The optimized, in-budget pipeline is **~469×** the unoptimized 1-GPU baseline and **~54×** the spec's own mixed reference. The most important engineering lesson is that **intuition is unreliable without measurement**: prefix caching was expected to help and hurt 4×; compiled mode was expected to break mixed traffic and was the single biggest win — proven safe for quality by direct probe. Systematic, hypothesis-driven experimentation against the full scoring function is the only reliable path to production inference performance.
+The optimized, in-budget pipeline is **~469×** the unoptimized 1-GPU baseline and **~54×** the public reference baseline. The most important engineering lesson is that **intuition is unreliable without measurement**: prefix caching was expected to help and hurt 4×; compiled mode was expected to break mixed traffic and was the single biggest win — proven safe for quality by direct probe. Systematic, hypothesis-driven experimentation against the full scoring function is the only reliable path to production inference performance.
 
 ---
 
-*InferTutor Arena — Capstone Complete · Inference Engineering Capstone · June 2026 · Hemanth Reganti*
+*Engineering Notes · Groundwork for Aperture · marketlogic.org · June 2026 · Hemanth Reganti*
 
 <div class="pagebreak"></div>
 
-## 12. Epilogue — From InferTutor to Aperture
+## 12. Where this leads — Aperture
 
 <p class="epigraph">“The most damaging phrase in the language is: ‘We’ve always done it this way.’”<span class="cite">— Grace Hopper</span></p>
 
-This capstone was, deliberately, a warm-up. The system it is preparing for is **Aperture** — the satellite-data platform I am building at [marketlogic.org](https://marketlogic.org/aperture/). Aperture is an *intelligent ground station*: it turns raw satellite imagery — optical, SAR, thermal, and LIDAR — into predictive intelligence at the **edge**, delivering insights in **milliseconds** rather than the industry-standard 24–48 hours, at roughly **$2–5 per scene** instead of the $50–100 a cloud pipeline costs.
+This study was, deliberately, a warm-up. The system it is preparing for is **Aperture** — the satellite-data platform I am building at [marketlogic.org](https://marketlogic.org/aperture/). Aperture is an *intelligent ground station*: it turns raw satellite imagery — optical, SAR, thermal, and LIDAR — into predictive intelligence at the **edge**, delivering insights in **milliseconds** rather than the industry-standard 24–48 hours, at roughly **$2–5 per scene** instead of the $50–100 a cloud pipeline costs.
 
 Read that promise again and the link to everything above is exact. Aperture's product *is* two numbers — **latency** and **cost per unit of work** — and those are precisely the two axes this report spent thirty pages optimizing. Pushing a synthetic-aperture-radar scene through an edge GPU is, mechanically, the same problem as pushing a tutoring prompt through an H100: the win comes from finding the one binding bottleneck and moving it, not from buying more hardware.
 
-The mapping is nearly one-to-one:
+The mapping is nearly one-to-one — read it row by row:
 
-| InferTutor Arena (this report) | Aperture (what this prepares for) |
-|---|---|
-| Multimodal LLM — text + image | Multi-sensor fusion — optical · SAR · thermal · LIDAR |
-| p95 TTFT / ITL under concurrent load | Time-to-insight: milliseconds, not 24–48 hours |
-| Score ÷ GPU count; $5.79 per winning run | $2–5 per scene on edge GPUs vs $50–100 on cloud |
-| Compiled CUDA graphs cut ITL 38.8 → 5.7 ms | 10–100× GPU-accelerated SAR processing at the edge |
-| Measure against the real objective, then move the bottleneck | Same loop, run against NISAR's ~85 TB/day downlink |
+<div class="figure" markdown="1">
+
+![From InferTutor to Aperture — the same engineering, a bigger target](figures/infertutor_to_aperture.png)
+
+*Figure 9 — Every technique in this report has a direct counterpart in Aperture's edge pipeline. The left column is what was measured here; the right column is where it goes next. The discipline — win latency and cost-per-unit at the inference layer — is identical; only the payload changes from tokens to telemetry.*
+
+</div>
 
 The three levers that carried this report are not LLM tricks — they are edge-inference fundamentals, and each transfers directly to a ground station ingesting an L-band SAR downlink: **compiled CUDA graphs** for steady-state latency, **co-locating the client with the server** so you measure what actually matters instead of your own uplink, and **widening the admission window** so the expensive stage never starves.
 
@@ -680,14 +685,14 @@ If this report demonstrates one transferable thing, it is the working method: *d
 
 ---
 
-*InferTutor Arena — Capstone Complete · Precursor to Aperture (marketlogic.org) · June 2026 · Hemanth Reganti*
+*Engineering Notes · Groundwork for Aperture · marketlogic.org · June 2026 · Hemanth Reganti*
 
 ## Appendix A — Reproducibility
 
 <p class="epigraph">“Any fool can write code that a computer can understand. Good programmers write code that humans can understand.”<span class="cite">— Martin Fowler</span></p>
 
 - **Repo:** https://github.com/Regantih/infertutor-arena-capstone (`/submission` holds all deliverables).
-- **Final JSON:** `mix-4r-300u_mixed_300u_1781402073.json` (official); `mix-8r-460u_mixed_460u_1781404394.json` (boss fight).
+- **Final JSON:** `mix-4r-300u_mixed_300u_1781402073.json` (headline); `mix-8r-460u_mixed_460u_1781404394.json` (scaled tier).
 - **Quality probe outputs:** `quality_compiled-mixed_1781407163.json`, `quality_eager-mixed_1781407530.json`.
 - **Scorer:** official `score_infertutor.py`, unmodified (omits `quality_pass_rate`; assumes 1.0).
 - **Prompts:** official `prompts.json`, unchanged; image = deterministic 256×192 PNG matching the harness.
@@ -720,7 +725,7 @@ The full campaign was **$116.79 across 32 Modal apps**. Two platform credits ($1
 </div>
 
 !!! finding "The headline efficiency number"
-    The **official submitted run** (`mix-4r`, the 4-GPU mixed app) cost **$5.79** and scored **149,776,620**. That is **≈ 25.9 million score-points per dollar** — and the score itself already divides by `total_GPU_count`, so the figure rewards doing more with fewer, cheaper GPUs. The expensive part of this project was the *search*; the winning configuration is cheap to run.
+    The **headline run** (`mix-4r`, the 4-GPU mixed app) cost **$5.79** and scored **149,776,620**. That is **≈ 25.9 million score-points per dollar** — and the score itself already divides by `total_GPU_count`, so the figure rewards doing more with fewer, cheaper GPUs. The expensive part of this project was the *search*; the winning configuration is cheap to run.
 
 **Reading the budget.** 82.6% of spend went to text-track R&D — and that is exactly where the three levers (`--no-fast-boot` compiled CUDA graphs, the co-located load client, and the `max_num_batched_tokens` bump) were found. Each lever was isolated on the cheaper text workload before being carried into the mixed submission, so the two final mixed runs only had to *confirm* a known-good recipe rather than explore. In hindsight that is the right shape for an optimization budget: spend on discovery, not on re-running what you already understand.
 
