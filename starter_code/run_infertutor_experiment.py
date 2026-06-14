@@ -162,8 +162,8 @@ def main():
     total_gpus = (args.gpu_count or args.tp) * args.replicas
     console.print(Panel(json.dumps(vars(args) | {"total_gpus": total_gpus}, indent=2), title="InferTutor Experiment"))
 
-    if total_gpus > 10:
-        raise SystemExit("Plan cap is 10 GPUs.")
+    if total_gpus > 8:
+        raise SystemExit("This starter runner caps experiments at 8 GPUs.")
 
     url = args.url or deploy(patch_modal_app(args))
     wait_for_health(url)

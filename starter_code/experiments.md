@@ -2,6 +2,8 @@
 
 **Track 1 (Multimodal / Mixed) is the submitted track — jump to the bottom section.** The text-track log below is the speed-track R&D that *discovered and validated the levers* (Modal-co-located client, compiled mode, `max_batch_tokens` 16384) which were then applied to the mixed workload.
 
+> **Budget note:** the two **submitted** results — Track 1 official (`mix-4r-300u`, **4 GPU**) and the optional boss fight (`mix-8r-460u`, **8 GPU**) — are both within the spec's budget (Track ≤4 H100; boss ≤8 H100). Some **text-track R&D rows below use 5–10 GPUs**; these are *private exploratory runs only* (the spec explicitly permits private experiments) and are **not submitted results**. Their lesson is precisely that going past 8 GPUs does **not** help (sub-linear scaling + error cliff), which is why the submission stays at ≤8.
+
 Model: Qwen/Qwen3-VL-4B-Instruct · GPU: H100 · compiled (`--no-fast-boot`) · `--no-prefix-cache` · max-tokens=96
 Text-track reference target (score_infertutor.py composite): **219,235,337**
 
