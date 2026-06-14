@@ -199,6 +199,7 @@ hr { border:none; border-top:1px solid #ddd; margin:20px 0; }
 </ul>
 </li>
 <li><a href="#11-conclusion">11. Conclusion</a></li>
+<li><a href="#12-epilogue-from-infertutor-to-aperture">12. Epilogue — From InferTutor to Aperture</a></li>
 <li><a href="#appendix-a-reproducibility">Appendix A — Reproducibility</a></li>
 <li><a href="#appendix-b-cost-compute-budget">Appendix B — Cost &amp; Compute Budget</a><ul>
 <li><a href="#b1-inside-the-rd-budget-what-9645-actually-bought">B.1 Inside the R&amp;D budget — what $96.45 actually bought</a></li>
@@ -963,6 +964,48 @@ JSON: <code>mix-8r-460u_mixed_460u_1781404394.json</code>.</p>
 <p>The optimized, in-budget pipeline is <strong>~469×</strong> the unoptimized 1-GPU baseline and <strong>~54×</strong> the spec's own mixed reference. The most important engineering lesson is that <strong>intuition is unreliable without measurement</strong>: prefix caching was expected to help and hurt 4×; compiled mode was expected to break mixed traffic and was the single biggest win — proven safe for quality by direct probe. Systematic, hypothesis-driven experimentation against the full scoring function is the only reliable path to production inference performance.</p>
 <hr />
 <p><em>InferTutor Arena — Capstone Complete · Inference Engineering Capstone · June 2026 · Hemanth Reganti</em></p>
+<div class="pagebreak"></div>
+
+<h2 id="12-epilogue-from-infertutor-to-aperture">12. Epilogue — From InferTutor to Aperture</h2>
+<p class="epigraph">“The most damaging phrase in the language is: ‘We’ve always done it this way.’”<span class="cite">— Grace Hopper</span></p>
+
+<p>This capstone was, deliberately, a warm-up. The system it is preparing for is <strong>Aperture</strong> — the satellite-data platform I am building at <a href="https://marketlogic.org/aperture/">marketlogic.org</a>. Aperture is an <em>intelligent ground station</em>: it turns raw satellite imagery — optical, SAR, thermal, and LIDAR — into predictive intelligence at the <strong>edge</strong>, delivering insights in <strong>milliseconds</strong> rather than the industry-standard 24–48 hours, at roughly <strong>$2–5 per scene</strong> instead of the $50–100 a cloud pipeline costs.</p>
+<p>Read that promise again and the link to everything above is exact. Aperture's product <em>is</em> two numbers — <strong>latency</strong> and <strong>cost per unit of work</strong> — and those are precisely the two axes this report spent thirty pages optimizing. Pushing a synthetic-aperture-radar scene through an edge GPU is, mechanically, the same problem as pushing a tutoring prompt through an H100: the win comes from finding the one binding bottleneck and moving it, not from buying more hardware.</p>
+<p>The mapping is nearly one-to-one:</p>
+<table>
+<thead>
+<tr>
+<th>InferTutor Arena (this report)</th>
+<th>Aperture (what this prepares for)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Multimodal LLM — text + image</td>
+<td>Multi-sensor fusion — optical · SAR · thermal · LIDAR</td>
+</tr>
+<tr>
+<td>p95 TTFT / ITL under concurrent load</td>
+<td>Time-to-insight: milliseconds, not 24–48 hours</td>
+</tr>
+<tr>
+<td>Score ÷ GPU count; $5.79 per winning run</td>
+<td>$2–5 per scene on edge GPUs vs $50–100 on cloud</td>
+</tr>
+<tr>
+<td>Compiled CUDA graphs cut ITL 38.8 → 5.7 ms</td>
+<td>10–100× GPU-accelerated SAR processing at the edge</td>
+</tr>
+<tr>
+<td>Measure against the real objective, then move the bottleneck</td>
+<td>Same loop, run against NISAR's ~85 TB/day downlink</td>
+</tr>
+</tbody>
+</table>
+<p>The three levers that carried this report are not LLM tricks — they are edge-inference fundamentals, and each transfers directly to a ground station ingesting an L-band SAR downlink: <strong>compiled CUDA graphs</strong> for steady-state latency, <strong>co-locating the client with the server</strong> so you measure what actually matters instead of your own uplink, and <strong>widening the admission window</strong> so the expensive stage never starves.</p>
+<p>If this report demonstrates one transferable thing, it is the working method: <em>don't tune blind.</em> State the objective as a single number, instrument everything, find the bottleneck the math — not the intuition — points to, move it, and re-measure. That loop turned a 0.3M baseline into a 150M production result here. It is the same loop Aperture runs against real orbital data next.</p>
+<hr />
+<p><em>InferTutor Arena — Capstone Complete · Precursor to Aperture (marketlogic.org) · June 2026 · Hemanth Reganti</em></p>
 <h2 id="appendix-a-reproducibility">Appendix A — Reproducibility</h2>
 <p class="epigraph">“Any fool can write code that a computer can understand. Good programmers write code that humans can understand.”<span class="cite">— Martin Fowler</span></p>
 

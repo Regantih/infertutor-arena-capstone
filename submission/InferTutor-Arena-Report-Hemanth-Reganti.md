@@ -654,6 +654,34 @@ The optimized, in-budget pipeline is **~469×** the unoptimized 1-GPU baseline a
 
 *InferTutor Arena — Capstone Complete · Inference Engineering Capstone · June 2026 · Hemanth Reganti*
 
+<div class="pagebreak"></div>
+
+## 12. Epilogue — From InferTutor to Aperture
+
+<p class="epigraph">“The most damaging phrase in the language is: ‘We’ve always done it this way.’”<span class="cite">— Grace Hopper</span></p>
+
+This capstone was, deliberately, a warm-up. The system it is preparing for is **Aperture** — the satellite-data platform I am building at [marketlogic.org](https://marketlogic.org/aperture/). Aperture is an *intelligent ground station*: it turns raw satellite imagery — optical, SAR, thermal, and LIDAR — into predictive intelligence at the **edge**, delivering insights in **milliseconds** rather than the industry-standard 24–48 hours, at roughly **$2–5 per scene** instead of the $50–100 a cloud pipeline costs.
+
+Read that promise again and the link to everything above is exact. Aperture's product *is* two numbers — **latency** and **cost per unit of work** — and those are precisely the two axes this report spent thirty pages optimizing. Pushing a synthetic-aperture-radar scene through an edge GPU is, mechanically, the same problem as pushing a tutoring prompt through an H100: the win comes from finding the one binding bottleneck and moving it, not from buying more hardware.
+
+The mapping is nearly one-to-one:
+
+| InferTutor Arena (this report) | Aperture (what this prepares for) |
+|---|---|
+| Multimodal LLM — text + image | Multi-sensor fusion — optical · SAR · thermal · LIDAR |
+| p95 TTFT / ITL under concurrent load | Time-to-insight: milliseconds, not 24–48 hours |
+| Score ÷ GPU count; $5.79 per winning run | $2–5 per scene on edge GPUs vs $50–100 on cloud |
+| Compiled CUDA graphs cut ITL 38.8 → 5.7 ms | 10–100× GPU-accelerated SAR processing at the edge |
+| Measure against the real objective, then move the bottleneck | Same loop, run against NISAR's ~85 TB/day downlink |
+
+The three levers that carried this report are not LLM tricks — they are edge-inference fundamentals, and each transfers directly to a ground station ingesting an L-band SAR downlink: **compiled CUDA graphs** for steady-state latency, **co-locating the client with the server** so you measure what actually matters instead of your own uplink, and **widening the admission window** so the expensive stage never starves.
+
+If this report demonstrates one transferable thing, it is the working method: *don't tune blind.* State the objective as a single number, instrument everything, find the bottleneck the math — not the intuition — points to, move it, and re-measure. That loop turned a 0.3M baseline into a 150M production result here. It is the same loop Aperture runs against real orbital data next.
+
+---
+
+*InferTutor Arena — Capstone Complete · Precursor to Aperture (marketlogic.org) · June 2026 · Hemanth Reganti*
+
 ## Appendix A — Reproducibility
 
 <p class="epigraph">“Any fool can write code that a computer can understand. Good programmers write code that humans can understand.”<span class="cite">— Martin Fowler</span></p>
