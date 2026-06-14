@@ -663,6 +663,12 @@ The optimized, in-budget pipeline is **~469×** the unoptimized 1-GPU baseline a
 
 ## 12. Where this leads — Aperture
 
+<div class="figure" markdown="1">
+
+![Inference in Space — the bottleneck isn't the rockets, it's the joules per token](figures/inference_in_space_banner.png)
+
+</div>
+
 <p class="epigraph">“The most damaging phrase in the language is: ‘We’ve always done it this way.’”<span class="cite">— Grace Hopper</span></p>
 
 This study was, deliberately, a warm-up. The system it is preparing for is **Aperture** — the satellite-data platform I am building at [marketlogic.org](https://marketlogic.org/aperture/). Aperture is an *intelligent ground station*: it turns raw satellite imagery — optical, SAR, thermal, and LIDAR — into predictive intelligence at the **edge**, delivering insights in **milliseconds** rather than the industry-standard 24–48 hours, at roughly **$2–5 per scene** instead of the $50–100 a cloud pipeline costs.
